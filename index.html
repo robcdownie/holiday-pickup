@@ -12,6 +12,12 @@
   label { display:block; font-size: 15px; font-weight: 700; color:#fbbf24; margin-bottom: 6px; }
   #q { width:100%; font-size: 26px; padding: 16px; border-radius: 12px; border: 3px solid #fbbf24; background:#1c1917; color:#fff; outline:none; }
   #q::placeholder { color:#78716c; }
+  #tq { width:100%; font-size:26px; padding:16px; border-radius:12px; border:3px solid #fbbf24; background:#1c1917; color:#fff; outline:none; }
+  #tq::placeholder { color:#78716c; }
+  #tcount { color:#a8a29e; font-size:14px; margin: 14px 0 8px; min-height: 20px; }
+  .loc { font-size:34px; font-weight:900; color:#fbbf24; line-height:1.15; }
+  .stackline { background:#1c1917; border:2px solid #44403c; border-radius:12px; padding:10px 12px; margin-bottom:8px; font-size:16px; line-height:1.5; }
+  .stackline b { color:#fbbf24; }
   .row { display:flex; gap:10px; margin-top:10px; }
   button { flex:1; font-size:18px; font-weight:700; padding:14px; border-radius:12px; border:2px solid #44403c; background:#292524; color:#f5f5f4; cursor:pointer; min-height:56px; }
   button:active { background:#44403c; }
@@ -28,7 +34,7 @@
   .none { font-size:20px; color:#fca5a5; font-weight:700; padding: 18px 4px; }
   .hint { color:#78716c; font-size:14px; margin-top: 18px; line-height:1.5; }
   .tabs { display:flex; gap:10px; margin-bottom:16px; }
-  .tab { flex:1; font-size:20px; font-weight:900; padding:14px; border-radius:12px; border:2px solid #44403c; background:#292524; color:#a8a29e; cursor:pointer; min-height:56px; }
+  .tab { flex:1; font-size:18px; font-weight:900; padding:14px; border-radius:12px; border:2px solid #44403c; background:#292524; color:#a8a29e; cursor:pointer; min-height:56px; }
   .tab.on { background:#fbbf24; color:#000; border-color:#fbbf24; }
   .card.picked { opacity:.55; border-color:#166534; }
   .markbtn { width:100%; margin-top:12px; background:#166534; border-color:#166534; color:#fff; }
@@ -53,6 +59,7 @@
 <div class="tabs">
   <button class="tab on" id="tabLookup" type="button">LOOKUP</button>
   <button class="tab" id="tabDay" type="button">DAY</button>
+  <button class="tab" id="tabTruck" type="button">TRUCK</button>
 </div>
 <div id="viewLookup">
 <label for="q">CUSTOMER NAME</label>
@@ -69,6 +76,15 @@
   <p style="color:#a8a29e;font-size:14px;margin-bottom:14px">Picked up counts are tracked on THIS phone only. They are not shared with other phones. Totals per time slot come straight from the manifest.</p>
   <div id="slots"></div>
   <button id="resetDay" type="button">RESET ALL PICKED UP MARKS</button>
+</div>
+<div id="viewTruck" style="display:none">
+  <label for="tq">BOX NUMBER CALLED ON THE RADIO</label>
+  <input id="tq" type="search" inputmode="numeric" autocomplete="off" placeholder="Type the number on the box">
+  <div class="row"><button id="tclear" type="button">CLEAR</button></div>
+  <p id="tcount">191 orders, 211 boxes in the trailer. Type a number to see side, row, and level.</p>
+  <div id="tresults"></div>
+  <p style="color:#a8a29e;font-size:14px;margin:10px 0">Box 33 (Damico, Kris, 9:00 AM) was NOT found in the trailer count. SF orders are not in the trailer. Stack lists below run top to bottom.</p>
+  <div id="stacks"></div>
 </div>
 <p class="hint">Tell Robbie the BOX number shown in big yellow numbers. If more than one card appears, check the first name, pickup time, and order number before calling a box. A red UNPAID tag means the order shows unpaid on the manifest. Box SF is printed as SF on the manifest. This file works offline, no sign in needed.</p>
 <script>
@@ -145,16 +161,68 @@ function renderDay(){
   }
 }
 document.getElementById('resetDay').addEventListener('click', ()=>{ if(confirm('Clear every picked up mark on this phone?')){ picked.clear(); savePicked(); search(); renderDay(); } });
-function showTab(day){
-  document.getElementById('viewLookup').style.display = day ? 'none' : '';
-  document.getElementById('viewDay').style.display = day ? '' : 'none';
-  document.getElementById('tabLookup').classList.toggle('on', !day);
-  document.getElementById('tabDay').classList.toggle('on', day);
-  if(day) renderDay();
+function showTab(name){
+  document.getElementById('viewLookup').style.display = name === 'lookup' ? '' : 'none';
+  document.getElementById('viewDay').style.display = name === 'day' ? '' : 'none';
+  document.getElementById('viewTruck').style.display = name === 'truck' ? '' : 'none';
+  document.getElementById('tabLookup').classList.toggle('on', name === 'lookup');
+  document.getElementById('tabDay').classList.toggle('on', name === 'day');
+  document.getElementById('tabTruck').classList.toggle('on', name === 'truck');
+  if(name === 'day') renderDay();
+  if(name === 'truck'){ renderStacks(); document.getElementById('tq').focus(); }
 }
-document.getElementById('tabLookup').addEventListener('click', ()=>showTab(false));
-document.getElementById('tabDay').addEventListener('click', ()=>showTab(true));
+document.getElementById('tabLookup').addEventListener('click', ()=>showTab('lookup'));
+document.getElementById('tabDay').addEventListener('click', ()=>showTab('day'));
+document.getElementById('tabTruck').addEventListener('click', ()=>showTab('truck'));
 renderDay();
+const TRUCK = [{"n":"192","b":1,"t":1,"s":"RIGHT","r":1,"l":5},{"n":"191","b":1,"t":1,"s":"RIGHT","r":1,"l":4},{"n":"190","b":1,"t":1,"s":"RIGHT","r":1,"l":3},{"n":"189","b":1,"t":1,"s":"RIGHT","r":1,"l":2},{"n":"188","b":1,"t":1,"s":"RIGHT","r":1,"l":1},{"n":"187","b":1,"t":2,"s":"RIGHT","r":2,"l":7},{"n":"187","b":2,"t":2,"s":"RIGHT","r":2,"l":6},{"n":"186","b":1,"t":1,"s":"RIGHT","r":2,"l":5},{"n":"185","b":1,"t":1,"s":"RIGHT","r":2,"l":4},{"n":"184","b":1,"t":1,"s":"RIGHT","r":2,"l":3},{"n":"183","b":1,"t":1,"s":"RIGHT","r":2,"l":2},{"n":"182","b":1,"t":1,"s":"RIGHT","r":2,"l":1},{"n":"181","b":1,"t":1,"s":"RIGHT","r":3,"l":7},{"n":"180","b":1,"t":1,"s":"RIGHT","r":3,"l":6},{"n":"179","b":1,"t":1,"s":"RIGHT","r":3,"l":5},{"n":"178","b":1,"t":1,"s":"RIGHT","r":3,"l":4},{"n":"177","b":1,"t":1,"s":"RIGHT","r":3,"l":3},{"n":"176","b":1,"t":1,"s":"RIGHT","r":3,"l":2},{"n":"175","b":1,"t":1,"s":"RIGHT","r":3,"l":1},{"n":"174","b":1,"t":1,"s":"RIGHT","r":4,"l":7},{"n":"173","b":1,"t":1,"s":"RIGHT","r":4,"l":6},{"n":"172","b":1,"t":1,"s":"RIGHT","r":4,"l":5},{"n":"171","b":1,"t":1,"s":"RIGHT","r":4,"l":4},{"n":"170","b":1,"t":1,"s":"RIGHT","r":4,"l":3},{"n":"169","b":1,"t":1,"s":"RIGHT","r":4,"l":2},{"n":"168","b":1,"t":1,"s":"RIGHT","r":4,"l":1},{"n":"167","b":1,"t":1,"s":"RIGHT","r":5,"l":6},{"n":"166","b":1,"t":2,"s":"RIGHT","r":5,"l":5},{"n":"166","b":2,"t":2,"s":"RIGHT","r":5,"l":4},{"n":"165","b":1,"t":2,"s":"RIGHT","r":5,"l":3},{"n":"165","b":2,"t":2,"s":"RIGHT","r":5,"l":2},{"n":"164","b":1,"t":1,"s":"RIGHT","r":5,"l":1},{"n":"163","b":1,"t":1,"s":"RIGHT","r":6,"l":7},{"n":"162","b":1,"t":1,"s":"RIGHT","r":6,"l":6},{"n":"161","b":1,"t":1,"s":"RIGHT","r":6,"l":5},{"n":"160","b":1,"t":1,"s":"RIGHT","r":6,"l":4},{"n":"159","b":1,"t":1,"s":"RIGHT","r":6,"l":3},{"n":"158","b":1,"t":1,"s":"RIGHT","r":6,"l":2},{"n":"157","b":1,"t":1,"s":"RIGHT","r":6,"l":1},{"n":"156","b":1,"t":1,"s":"RIGHT","r":7,"l":7},{"n":"155","b":1,"t":2,"s":"RIGHT","r":7,"l":6},{"n":"155","b":2,"t":2,"s":"RIGHT","r":7,"l":5},{"n":"154","b":1,"t":1,"s":"RIGHT","r":7,"l":4},{"n":"153","b":1,"t":1,"s":"RIGHT","r":7,"l":3},{"n":"152","b":1,"t":1,"s":"RIGHT","r":7,"l":2},{"n":"151","b":1,"t":1,"s":"RIGHT","r":7,"l":1},{"n":"150","b":1,"t":1,"s":"RIGHT","r":8,"l":7},{"n":"149","b":1,"t":1,"s":"RIGHT","r":8,"l":6},{"n":"148","b":1,"t":2,"s":"RIGHT","r":8,"l":5},{"n":"148","b":2,"t":2,"s":"RIGHT","r":8,"l":4},{"n":"147","b":1,"t":1,"s":"RIGHT","r":8,"l":3},{"n":"146","b":1,"t":1,"s":"RIGHT","r":8,"l":2},{"n":"145","b":1,"t":1,"s":"RIGHT","r":8,"l":1},{"n":"144","b":1,"t":1,"s":"RIGHT","r":9,"l":7},{"n":"143","b":1,"t":1,"s":"RIGHT","r":9,"l":6},{"n":"142","b":1,"t":1,"s":"RIGHT","r":9,"l":5},{"n":"141","b":1,"t":1,"s":"RIGHT","r":9,"l":4},{"n":"140","b":1,"t":1,"s":"RIGHT","r":9,"l":3},{"n":"139","b":1,"t":1,"s":"RIGHT","r":9,"l":2},{"n":"138","b":1,"t":1,"s":"RIGHT","r":9,"l":1},{"n":"137","b":1,"t":1,"s":"RIGHT","r":10,"l":7},{"n":"136","b":1,"t":1,"s":"RIGHT","r":10,"l":6},{"n":"135","b":1,"t":1,"s":"RIGHT","r":10,"l":5},{"n":"134","b":1,"t":1,"s":"RIGHT","r":10,"l":4},{"n":"133","b":1,"t":1,"s":"RIGHT","r":10,"l":3},{"n":"132","b":1,"t":1,"s":"RIGHT","r":10,"l":2},{"n":"131","b":1,"t":1,"s":"RIGHT","r":10,"l":1},{"n":"130","b":1,"t":1,"s":"RIGHT","r":11,"l":7},{"n":"129","b":1,"t":1,"s":"RIGHT","r":11,"l":6},{"n":"128","b":1,"t":1,"s":"RIGHT","r":11,"l":5},{"n":"127","b":1,"t":1,"s":"RIGHT","r":11,"l":4},{"n":"126","b":1,"t":1,"s":"RIGHT","r":11,"l":3},{"n":"125","b":1,"t":2,"s":"RIGHT","r":11,"l":2},{"n":"125","b":2,"t":2,"s":"RIGHT","r":11,"l":1},{"n":"124","b":1,"t":1,"s":"RIGHT","r":12,"l":7},{"n":"123","b":1,"t":1,"s":"RIGHT","r":12,"l":6},{"n":"122","b":1,"t":2,"s":"RIGHT","r":12,"l":5},{"n":"122","b":2,"t":2,"s":"RIGHT","r":12,"l":4},{"n":"121","b":1,"t":2,"s":"RIGHT","r":12,"l":3},{"n":"121","b":2,"t":2,"s":"RIGHT","r":12,"l":2},{"n":"120","b":1,"t":1,"s":"RIGHT","r":12,"l":1},{"n":"119","b":1,"t":1,"s":"RIGHT","r":13,"l":7},{"n":"118","b":1,"t":1,"s":"RIGHT","r":13,"l":6},{"n":"117","b":1,"t":1,"s":"RIGHT","r":13,"l":5},{"n":"116","b":1,"t":1,"s":"RIGHT","r":13,"l":4},{"n":"115","b":1,"t":1,"s":"RIGHT","r":13,"l":3},{"n":"114","b":1,"t":1,"s":"RIGHT","r":13,"l":2},{"n":"113","b":1,"t":1,"s":"RIGHT","r":13,"l":1},{"n":"112","b":1,"t":2,"s":"RIGHT","r":14,"l":7},{"n":"112","b":2,"t":2,"s":"RIGHT","r":14,"l":6},{"n":"111","b":1,"t":1,"s":"RIGHT","r":14,"l":5},{"n":"110","b":1,"t":2,"s":"RIGHT","r":14,"l":4},{"n":"110","b":2,"t":2,"s":"RIGHT","r":14,"l":3},{"n":"109","b":1,"t":2,"s":"RIGHT","r":14,"l":2},{"n":"109","b":2,"t":2,"s":"RIGHT","r":14,"l":1},{"n":"108","b":1,"t":2,"s":"RIGHT","r":15,"l":6},{"n":"108","b":2,"t":2,"s":"RIGHT","r":15,"l":5},{"n":"107","b":1,"t":1,"s":"RIGHT","r":15,"l":4},{"n":"106","b":1,"t":1,"s":"RIGHT","r":15,"l":3},{"n":"105","b":1,"t":1,"s":"RIGHT","r":15,"l":2},{"n":"104","b":1,"t":1,"s":"RIGHT","r":15,"l":1},{"n":"103","b":1,"t":1,"s":"RIGHT","r":16,"l":7},{"n":"102","b":1,"t":1,"s":"RIGHT","r":16,"l":6},{"n":"101","b":1,"t":1,"s":"RIGHT","r":16,"l":5},{"n":"100","b":1,"t":1,"s":"RIGHT","r":16,"l":4},{"n":"99","b":1,"t":1,"s":"RIGHT","r":16,"l":3},{"n":"98","b":1,"t":1,"s":"RIGHT","r":16,"l":2},{"n":"97","b":1,"t":1,"s":"RIGHT","r":16,"l":1},{"n":"96","b":1,"t":2,"s":"RIGHT","r":17,"l":7},{"n":"96","b":2,"t":2,"s":"RIGHT","r":17,"l":6},{"n":"95","b":1,"t":1,"s":"RIGHT","r":17,"l":5},{"n":"94","b":1,"t":1,"s":"RIGHT","r":17,"l":4},{"n":"93","b":1,"t":1,"s":"RIGHT","r":17,"l":3},{"n":"92","b":1,"t":1,"s":"RIGHT","r":17,"l":2},{"n":"91","b":1,"t":1,"s":"RIGHT","r":17,"l":1},{"n":"90","b":1,"t":1,"s":"RIGHT","r":18,"l":3},{"n":"89","b":1,"t":1,"s":"RIGHT","r":18,"l":2},{"n":"88","b":1,"t":1,"s":"RIGHT","r":18,"l":1},{"n":"87","b":1,"t":1,"s":"RIGHT","r":19,"l":5},{"n":"86","b":1,"t":1,"s":"RIGHT","r":19,"l":4},{"n":"85","b":1,"t":1,"s":"RIGHT","r":19,"l":3},{"n":"84","b":1,"t":1,"s":"RIGHT","r":19,"l":2},{"n":"83","b":1,"t":1,"s":"RIGHT","r":19,"l":1},{"n":"82","b":1,"t":1,"s":"RIGHT","r":20,"l":6},{"n":"81","b":1,"t":1,"s":"RIGHT","r":20,"l":5},{"n":"80","b":1,"t":1,"s":"RIGHT","r":20,"l":4},{"n":"79","b":1,"t":1,"s":"RIGHT","r":20,"l":3},{"n":"78","b":1,"t":1,"s":"RIGHT","r":20,"l":2},{"n":"77","b":1,"t":1,"s":"RIGHT","r":20,"l":1},{"n":"5","b":1,"t":1,"s":"LEFT","r":1,"l":7},{"n":"6","b":1,"t":1,"s":"LEFT","r":1,"l":6},{"n":"7","b":1,"t":1,"s":"LEFT","r":1,"l":5},{"n":"8","b":1,"t":1,"s":"LEFT","r":1,"l":4},{"n":"9","b":1,"t":1,"s":"LEFT","r":1,"l":3},{"n":"10","b":1,"t":2,"s":"LEFT","r":1,"l":2},{"n":"10","b":2,"t":2,"s":"LEFT","r":1,"l":1},{"n":"1","b":1,"t":1,"s":"LEFT","r":2,"l":4},{"n":"2","b":1,"t":1,"s":"LEFT","r":2,"l":3},{"n":"3","b":1,"t":1,"s":"LEFT","r":2,"l":2},{"n":"4","b":1,"t":1,"s":"LEFT","r":2,"l":1},{"n":"11","b":1,"t":1,"s":"LEFT","r":3,"l":5},{"n":"12","b":1,"t":1,"s":"LEFT","r":3,"l":4},{"n":"13","b":1,"t":1,"s":"LEFT","r":3,"l":3},{"n":"14","b":1,"t":1,"s":"LEFT","r":3,"l":2},{"n":"15","b":1,"t":1,"s":"LEFT","r":3,"l":1},{"n":"20","b":1,"t":1,"s":"LEFT","r":4,"l":5},{"n":"19","b":1,"t":1,"s":"LEFT","r":4,"l":4},{"n":"18","b":1,"t":1,"s":"LEFT","r":4,"l":3},{"n":"17","b":1,"t":1,"s":"LEFT","r":4,"l":2},{"n":"16","b":1,"t":1,"s":"LEFT","r":4,"l":1},{"n":"21","b":1,"t":1,"s":"LEFT","r":5,"l":6},{"n":"22","b":1,"t":1,"s":"LEFT","r":5,"l":5},{"n":"23","b":1,"t":1,"s":"LEFT","r":5,"l":4},{"n":"24","b":1,"t":1,"s":"LEFT","r":5,"l":3},{"n":"25","b":1,"t":1,"s":"LEFT","r":5,"l":2},{"n":"26","b":1,"t":1,"s":"LEFT","r":5,"l":1},{"n":"32","b":1,"t":1,"s":"LEFT","r":6,"l":6},{"n":"31","b":1,"t":1,"s":"LEFT","r":6,"l":5},{"n":"30","b":1,"t":1,"s":"LEFT","r":6,"l":4},{"n":"29","b":1,"t":1,"s":"LEFT","r":6,"l":3},{"n":"28","b":1,"t":1,"s":"LEFT","r":6,"l":2},{"n":"27","b":1,"t":1,"s":"LEFT","r":6,"l":1},{"n":"39","b":1,"t":1,"s":"LEFT","r":7,"l":6},{"n":"38","b":1,"t":1,"s":"LEFT","r":7,"l":5},{"n":"37","b":1,"t":1,"s":"LEFT","r":7,"l":4},{"n":"36","b":1,"t":1,"s":"LEFT","r":7,"l":3},{"n":"35","b":1,"t":1,"s":"LEFT","r":7,"l":2},{"n":"34","b":1,"t":1,"s":"LEFT","r":7,"l":1},{"n":"45","b":1,"t":2,"s":"LEFT","r":8,"l":7},{"n":"45","b":2,"t":2,"s":"LEFT","r":8,"l":6},{"n":"44","b":1,"t":1,"s":"LEFT","r":8,"l":5},{"n":"43","b":1,"t":1,"s":"LEFT","r":8,"l":4},{"n":"42","b":1,"t":1,"s":"LEFT","r":8,"l":3},{"n":"41","b":1,"t":1,"s":"LEFT","r":8,"l":2},{"n":"40","b":1,"t":1,"s":"LEFT","r":8,"l":1},{"n":"51","b":1,"t":1,"s":"LEFT","r":9,"l":6},{"n":"50","b":1,"t":1,"s":"LEFT","r":9,"l":5},{"n":"49","b":1,"t":1,"s":"LEFT","r":9,"l":4},{"n":"48","b":1,"t":1,"s":"LEFT","r":9,"l":3},{"n":"47","b":1,"t":1,"s":"LEFT","r":9,"l":2},{"n":"46","b":1,"t":1,"s":"LEFT","r":9,"l":1},{"n":"56","b":1,"t":1,"s":"LEFT","r":10,"l":6},{"n":"55","b":1,"t":1,"s":"LEFT","r":10,"l":5},{"n":"54","b":1,"t":1,"s":"LEFT","r":10,"l":4},{"n":"53","b":1,"t":1,"s":"LEFT","r":10,"l":3},{"n":"52","b":1,"t":2,"s":"LEFT","r":10,"l":2},{"n":"52","b":2,"t":2,"s":"LEFT","r":10,"l":1},{"n":"60","b":1,"t":1,"s":"LEFT","r":11,"l":6},{"n":"59","b":1,"t":1,"s":"LEFT","r":11,"l":5},{"n":"58","b":1,"t":3,"s":"LEFT","r":11,"l":4},{"n":"58","b":2,"t":3,"s":"LEFT","r":11,"l":3},{"n":"58","b":3,"t":3,"s":"LEFT","r":11,"l":2},{"n":"57","b":1,"t":1,"s":"LEFT","r":11,"l":1},{"n":"64","b":1,"t":1,"s":"LEFT","r":12,"l":6},{"n":"63","b":1,"t":1,"s":"LEFT","r":12,"l":5},{"n":"62","b":1,"t":2,"s":"LEFT","r":12,"l":4},{"n":"62","b":2,"t":2,"s":"LEFT","r":12,"l":3},{"n":"61","b":1,"t":2,"s":"LEFT","r":12,"l":2},{"n":"61","b":2,"t":2,"s":"LEFT","r":12,"l":1},{"n":"70","b":1,"t":1,"s":"LEFT","r":13,"l":6},{"n":"69","b":1,"t":1,"s":"LEFT","r":13,"l":5},{"n":"68","b":1,"t":1,"s":"LEFT","r":13,"l":4},{"n":"67","b":1,"t":1,"s":"LEFT","r":13,"l":3},{"n":"66","b":1,"t":1,"s":"LEFT","r":13,"l":2},{"n":"65","b":1,"t":1,"s":"LEFT","r":13,"l":1},{"n":"76","b":1,"t":1,"s":"LEFT","r":14,"l":6},{"n":"75","b":1,"t":1,"s":"LEFT","r":14,"l":5},{"n":"74","b":1,"t":1,"s":"LEFT","r":14,"l":4},{"n":"73","b":1,"t":1,"s":"LEFT","r":14,"l":3},{"n":"72","b":1,"t":1,"s":"LEFT","r":14,"l":2},{"n":"71","b":1,"t":1,"s":"LEFT","r":14,"l":1}];
+const tq = document.getElementById('tq');
+const tresults = document.getElementById('tresults');
+const tcount = document.getElementById('tcount');
+const tPicked = new Set(JSON.parse(localStorage.getItem('hm_truck_picked_v1') || '[]'));
+function tSave(){ localStorage.setItem('hm_truck_picked_v1', JSON.stringify([...tPicked])); }
+function custFor(n){ return DATA.find(r => r.box === n); }
+function truckSearch(){
+  const v = tq.value.trim();
+  tresults.innerHTML = '';
+  if(!v){ tcount.textContent = '191 orders, 211 boxes in the trailer. Type a number to see side, row, and level.'; return; }
+  let hits = TRUCK.filter(b => b.n === v);
+  if(!hits.length) hits = TRUCK.filter(b => b.n.startsWith(v));
+  if(!hits.length){ tcount.textContent = ''; tresults.innerHTML = '<p class="none">Box ' + v.replace(/</g,'') + ' is not in the trailer list. Box 33 was not found in the count, and SF orders are not in the trailer.</p>'; return; }
+  const orders = new Set(hits.map(b => b.n));
+  tcount.textContent = hits.length + (hits.length === 1 ? ' box' : ' boxes') + ' for ' + orders.size + (orders.size === 1 ? ' order' : ' orders');
+  for(const b of hits){
+    const c = custFor(b.n);
+    const key = b.n + '-' + b.b;
+    const d = document.createElement('div'); d.className = 'card' + (tPicked.has(key) ? ' picked' : '');
+    d.innerHTML = '<div class="boxlabel">BOX ' + b.n + ' &middot; BOX ' + b.b + ' OF ' + b.t + '</div>' +
+      '<div class="loc">' + b.s + ' &middot; ROW ' + b.r + ' &middot; LEVEL ' + b.l + '</div>' +
+      (c ? '<div class="name">' + c.last + ', ' + c.first + '</div><div class="meta">Pickup: <b>' + c.time + '</b> &middot; Order #: <b>' + c.order + '</b></div>' : '') +
+      (tPicked.has(key) ? '<div class="meta"><span class="pickedtag">PICKED UP</span></div>' : '');
+    const mb = document.createElement('button'); mb.type = 'button';
+    mb.className = 'markbtn' + (tPicked.has(key) ? ' undo' : '');
+    mb.textContent = tPicked.has(key) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
+    mb.addEventListener('click', ()=>{ if(tPicked.has(key)) tPicked.delete(key); else tPicked.add(key); tSave(); truckSearch(); });
+    d.appendChild(mb);
+    tresults.appendChild(d);
+  }
+}
+function renderStacks(){
+  const wrap = document.getElementById('stacks');
+  if(wrap.children.length) return;
+  const groups = {};
+  for(const b of TRUCK){ const k = b.s + '|' + b.r; (groups[k] = groups[k] || []).push(b); }
+  const keys = Object.keys(groups).sort((a,b2)=>{ const pa=a.split('|'), pb=b2.split('|'); return pa[0] === pb[0] ? (+pa[1]) - (+pb[1]) : (pa[0] === 'RIGHT' ? -1 : 1); });
+  for(const k of keys){
+    const parts = k.split('|');
+    const nums = groups[k].slice().sort((x,y)=> y.l - x.l).map(b => b.n).join(' ');
+    const el = document.createElement('div'); el.className = 'stackline';
+    el.innerHTML = '<b>' + parts[0] + ' ROW ' + parts[1] + '</b> (' + groups[k].length + '): ' + nums;
+    wrap.appendChild(el);
+  }
+}
+tq.addEventListener('input', truckSearch);
+document.getElementById('tclear').addEventListener('click', ()=>{ tq.value=''; truckSearch(); tq.focus(); });
 q.addEventListener('input', search);
 document.getElementById('clear').addEventListener('click', ()=>{ q.value=''; search(); q.focus(); });
 q.focus();
