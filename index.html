@@ -42,6 +42,8 @@
   .tab.on { background:#fbbf24; color:#000; border-color:#fbbf24; }
   .card.picked { opacity:.55; border-color:#166534; }
 
+
+  .smsbtn { display:block; width:100%; margin-top:8px; min-height:52px; line-height:52px; text-align:center; font-size:18px; font-weight:900; border-radius:10px; background:#16a34a; color:#fff; text-decoration:none; }
   .itemsbtn { width:100%; margin-top:8px; min-height:48px; font-size:17px; font-weight:800; border-radius:10px; border:2px solid #38bdf8; background:#082f49; color:#7dd3fc; }
   .itemslist { margin-top:8px; border-top:1px solid #334155; padding-top:8px; }
   .itemrow { display:block; width:100%; text-align:left; background:none; border:none; color:#f8fafc; font-size:18px; padding:9px 4px; border-bottom:1px solid #1e293b; }
@@ -141,6 +143,10 @@ function search(){
     mb.textContent = picked.has(r.order) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
     mb.addEventListener('click', ()=>{ togglePicked(r.order); });
     d.appendChild(mb);
+    const sa = document.createElement('a'); sa.className='smsbtn';
+    sa.href = 'sms:+14012584940&body=' + encodeURIComponent('Box ' + r.box + ', ' + r.last + ', ' + r.first + ', ' + r.time + ' pickup, order ' + r.order);
+    sa.textContent = 'TEXT BOX ' + r.box + ' TO ROBBIE';
+    d.appendChild(sa);
     const items = ITEMS[r.order] || [];
     if(items.length){
       const ib = document.createElement('button'); ib.type='button'; ib.className='itemsbtn';
@@ -271,6 +277,10 @@ function truckSearch(){
     mb.textContent = tPicked.has(key) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
     mb.addEventListener('click', ()=>{ const on = !tPicked.has(key); if(on) tPicked.add(key); else tPicked.delete(key); tSave(); truckSearch(); pending['t' + key] = on; savePending(); pushPending('t' + key); });
     d.appendChild(mb);
+    const sa2 = document.createElement('a'); sa2.className='smsbtn';
+    sa2.href = 'sms:+14012584940&body=' + encodeURIComponent('Box ' + b.n + (b.t > 1 ? ' (' + b.b + ' of ' + b.t + ')' : '') + ', ' + b.s + ' Row ' + b.r + ' Level ' + b.l + (c ? ', ' + c.last + ', ' + c.first : ''));
+    sa2.textContent = 'TEXT BOX ' + b.n + ' TO ROBBIE';
+    d.appendChild(sa2);
     tresults.appendChild(d);
   }
 }
