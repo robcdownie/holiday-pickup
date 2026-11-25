@@ -145,12 +145,18 @@ async function fbPut(id, val){
     setSync(true);
   }catch(e){ setSync(false); }
 }
+let firstSync = true;
 async function syncFromServer(){
   try{
     const r = await fetch(FB + '/pickups.json'); if(!r.ok) throw 0;
     const data = await r.json();
     const np = new Set(), nt = new Set();
     if(data){ for(const k of Object.keys(data)){ if(!data[k]) continue; if(k.startsWith('o')) np.add(k.slice(1)); else if(k.startsWith('t')) nt.add(k.slice(1)); } }
+    if(firstSync){
+      firstSync = false;
+      for(const o of picked){ if(!np.has(o)){ np.add(o); fbPut('o' + o, true); } }
+      for(const t of tPicked){ if(!nt.has(t)){ nt.add(t); fbPut('t' + t, true); } }
+    }
     picked = np; tPicked = nt; savePicked(); tSave(); setSync(true);
     search(); renderDay(); if(tq.value) truckSearch();
   }catch(e){ setSync(false); }
