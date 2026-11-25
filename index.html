@@ -44,6 +44,11 @@
 
 
   .smsbtn { display:block; width:100%; margin-top:8px; min-height:52px; line-height:52px; text-align:center; font-size:18px; font-weight:900; border-radius:10px; background:#16a34a; color:#fff; text-decoration:none; }
+
+  .card.unpaidcard { background:#7f1d1d; border:3px solid #ef4444; }
+  .card.unpaidcard .box { color:#fde68a; }
+  .card.unpaidcard .name, .card.unpaidcard .meta { color:#fff; }
+  .unpaidbanner { background:#dc2626; color:#fff; font-size:26px; font-weight:900; text-align:center; border-radius:10px; padding:10px 6px; margin-bottom:10px; letter-spacing:1px; }
   .itemsbtn { width:100%; margin-top:8px; min-height:48px; font-size:17px; font-weight:800; border-radius:10px; border:2px solid #38bdf8; background:#082f49; color:#7dd3fc; }
   .itemslist { margin-top:8px; border-top:1px solid #334155; padding-top:8px; }
   .itemrow { display:block; width:100%; text-align:left; background:none; border:none; color:#f8fafc; font-size:18px; padding:9px 4px; border-bottom:1px solid #1e293b; }
@@ -138,6 +143,7 @@ function search(){
       '<div class="meta">Pickup: <b>' + r.time + '</b> &middot; Type: <b>' + r.type + '</b><br>Order #: <b>' + r.order + '</b></div>' +
       '<div class="meta">' + (r.paid ? '<span class="paid">PAID</span>' : '<span class="unpaid">UNPAID</span>') + (picked.has(r.order) ? '<span class="pickedtag">PICKED UP</span>' : '') + '</div>';
     if(picked.has(r.order)) d.classList.add('picked');
+    if(!r.paid){ d.classList.add('unpaidcard'); const ub = document.createElement('div'); ub.className='unpaidbanner'; ub.textContent='UNPAID'; d.insertBefore(ub, d.firstChild); }
     const mb = document.createElement('button'); mb.type='button';
     mb.className = 'markbtn' + (picked.has(r.order) ? ' undo' : '');
     mb.textContent = picked.has(r.order) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
@@ -267,8 +273,8 @@ function truckSearch(){
   for(const b of hits){
     const c = custFor(b.n);
     const key = b.n + '-' + b.b;
-    const d = document.createElement('div'); d.className = 'card' + (tPicked.has(key) ? ' picked' : '');
-    d.innerHTML = '<div class="boxlabel">BOX ' + b.n + (b.t > 1 ? ' &middot; BOX ' + b.b + ' OF ' + b.t : '') + '</div>' +
+    const d = document.createElement('div'); d.className = 'card' + (tPicked.has(key) ? ' picked' : '') + (c && !c.paid ? ' unpaidcard' : '');
+    d.innerHTML = (c && !c.paid ? '<div class="unpaidbanner">UNPAID</div>' : '') + '<div class="boxlabel">BOX ' + b.n + (b.t > 1 ? ' &middot; BOX ' + b.b + ' OF ' + b.t : '') + '</div>' +
       '<div class="loc">' + b.s + ' &middot; ROW ' + b.r + ' &middot; LEVEL ' + b.l + '</div>' +
       (c ? '<div class="name">' + esc(c.last) + ', ' + esc(c.first) + '</div><div class="meta">Pickup: <b>' + esc(c.time) + '</b> &middot; Order #: <b>' + esc(c.order) + '</b></div>' : '') +
       (tPicked.has(key) ? '<div class="meta"><span class="pickedtag">PICKED UP</span></div>' : '');
