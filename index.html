@@ -45,10 +45,12 @@
 
   .smsbtn { display:block; width:100%; margin-top:8px; min-height:52px; line-height:52px; text-align:center; font-size:18px; font-weight:900; border-radius:10px; background:#16a34a; color:#fff; text-decoration:none; }
 
-  .card.unpaidcard { background:#7f1d1d; border:3px solid #ef4444; }
-  .card.unpaidcard .box { color:#fde68a; }
+  .card.unpaidcard { background:#dc2626; border:4px solid #ffffff; animation:unpaidpulse 1.2s infinite; }
+  @keyframes unpaidpulse { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,.9); } 50% { box-shadow:0 0 0 12px rgba(239,68,68,0); } }
+  .card.unpaidcard .box { color:#ffffff; }
+  .card.unpaidcard .boxlabel { color:#fecaca; }
   .card.unpaidcard .name, .card.unpaidcard .meta { color:#fff; }
-  .unpaidbanner { background:#dc2626; color:#fff; font-size:26px; font-weight:900; text-align:center; border-radius:10px; padding:10px 6px; margin-bottom:10px; letter-spacing:1px; }
+  .unpaidbanner { background:#ffffff; color:#dc2626; font-size:38px; font-weight:900; text-align:center; border-radius:10px; padding:12px 6px; margin-bottom:12px; letter-spacing:2px; }
   .itemsbtn { width:100%; margin-top:8px; min-height:48px; font-size:17px; font-weight:800; border-radius:10px; border:2px solid #38bdf8; background:#082f49; color:#7dd3fc; }
   .itemslist { margin-top:8px; border-top:1px solid #334155; padding-top:8px; }
   .itemrow { display:block; width:100%; text-align:left; background:none; border:none; color:#f8fafc; font-size:18px; padding:9px 4px; border-bottom:1px solid #1e293b; }
