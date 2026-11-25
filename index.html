@@ -51,6 +51,10 @@
   .card.unpaidcard .boxlabel { color:#fecaca; }
   .card.unpaidcard .name, .card.unpaidcard .meta { color:#fff; }
   .unpaidbanner { background:#ffffff; color:#dc2626; font-size:38px; font-weight:900; text-align:center; border-radius:10px; padding:12px 6px; margin-bottom:12px; letter-spacing:2px; }
+
+  .snum { font-weight:800; color:#f8fafc; }
+  .snum.done { color:#475569; text-decoration:line-through; font-weight:400; }
+  .stacksum { color:#fbbf24; font-weight:900; font-size:17px; margin:10px 0 4px; }
   .itemsbtn { width:100%; margin-top:8px; min-height:48px; font-size:17px; font-weight:800; border-radius:10px; border:2px solid #38bdf8; background:#082f49; color:#7dd3fc; }
   .itemslist { margin-top:8px; border-top:1px solid #334155; padding-top:8px; }
   .itemrow { display:block; width:100%; text-align:left; background:none; border:none; color:#f8fafc; font-size:18px; padding:9px 4px; border-bottom:1px solid #1e293b; }
@@ -216,7 +220,7 @@ async function syncFromServer(){
     const changed = JSON.stringify([...picked].sort()) !== JSON.stringify([...np].sort()) || JSON.stringify([...tPicked].sort()) !== JSON.stringify([...nt].sort());
     picked = np; tPicked = nt; savePicked(); tSave(); setSync(true);
     for(const id of Object.keys(pending)){ await pushPending(id); }
-    if(changed){ search(); renderDay(); if(tq.value) truckSearch(); }
+    if(changed){ search(); renderDay(); if(tq.value) truckSearch(); renderStacks(); }
   }catch(e){ setSync(false); }
   syncRunning = false;
 }
@@ -283,7 +287,7 @@ function truckSearch(){
     const mb = document.createElement('button'); mb.type = 'button';
     mb.className = 'markbtn' + (tPicked.has(key) ? ' undo' : '');
     mb.textContent = tPicked.has(key) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
-    mb.addEventListener('click', ()=>{ const on = !tPicked.has(key); if(on) tPicked.add(key); else tPicked.delete(key); tSave(); truckSearch(); pending['t' + key] = on; savePending(); pushPending('t' + key); });
+    mb.addEventListener('click', ()=>{ const on = !tPicked.has(key); if(on) tPicked.add(key); else tPicked.delete(key); tSave(); truckSearch(); pending['t' + key] = on; savePending(); pushPending('t' + key); renderStacks(); });
     d.appendChild(mb);
     const sa2 = document.createElement('a'); sa2.className='smsbtn';
     sa2.href = 'sms:+14012584940&body=' + encodeURIComponent('Box ' + b.n);
@@ -294,15 +298,22 @@ function truckSearch(){
 }
 function renderStacks(){
   const wrap = document.getElementById('stacks');
-  if(wrap.children.length) return;
+  wrap.innerHTML = '';
+  let totalLeft = 0, totalDone = 0;
+  for(const b of TRUCK){ if(tPicked.has(b.n + '-' + b.b)) totalDone++; else totalLeft++; }
+  const sum = document.createElement('div'); sum.className = 'stacksum';
+  sum.textContent = 'IN TRAILER LIST: ' + totalLeft + ' LEFT · ' + totalDone + ' DONE';
+  wrap.appendChild(sum);
   const groups = {};
   for(const b of TRUCK){ const k = b.s + '|' + b.r; (groups[k] = groups[k] || []).push(b); }
   const keys = Object.keys(groups).sort((a,b2)=>{ const pa=a.split('|'), pb=b2.split('|'); return pa[0] === pb[0] ? (+pa[1]) - (+pb[1]) : (pa[0] === 'RIGHT' ? -1 : 1); });
   for(const k of keys){
     const parts = k.split('|');
-    const nums = groups[k].slice().sort((x,y)=> y.l - x.l).map(b => b.n).join(' ');
+    const entries = groups[k].slice().sort((x,y)=> y.l - x.l);
+    const done = entries.filter(b => tPicked.has(b.n + '-' + b.b)).length;
+    const nums = entries.map(b => '<span class="snum' + (tPicked.has(b.n + '-' + b.b) ? ' done' : '') + '">' + b.n + '</span>').join(' ');
     const el = document.createElement('div'); el.className = 'stackline';
-    el.innerHTML = '<b>' + parts[0] + ' ROW ' + parts[1] + '</b> (' + groups[k].length + '): ' + nums;
+    el.innerHTML = '<b>' + parts[0] + ' ROW ' + parts[1] + '</b> (' + entries.length + ': ' + (entries.length - done) + ' left, ' + done + ' done): ' + nums;
     wrap.appendChild(el);
   }
 }
