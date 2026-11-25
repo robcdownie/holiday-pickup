@@ -144,7 +144,7 @@ function search(){
     mb.addEventListener('click', ()=>{ togglePicked(r.order); });
     d.appendChild(mb);
     const sa = document.createElement('a'); sa.className='smsbtn';
-    sa.href = 'sms:+14012584940&body=' + encodeURIComponent('Box ' + r.box + ', ' + r.last + ', ' + r.first + ', ' + r.time + ' pickup, order ' + r.order);
+    sa.href = 'sms:+14012584940&body=' + encodeURIComponent('Box ' + r.box);
     sa.textContent = 'TEXT BOX ' + r.box + ' TO ROBBIE';
     d.appendChild(sa);
     const items = ITEMS[r.order] || [];
@@ -278,7 +278,7 @@ function truckSearch(){
     mb.addEventListener('click', ()=>{ const on = !tPicked.has(key); if(on) tPicked.add(key); else tPicked.delete(key); tSave(); truckSearch(); pending['t' + key] = on; savePending(); pushPending('t' + key); });
     d.appendChild(mb);
     const sa2 = document.createElement('a'); sa2.className='smsbtn';
-    sa2.href = 'sms:+14012584940&body=' + encodeURIComponent('Box ' + b.n + (b.t > 1 ? ' (' + b.b + ' of ' + b.t + ')' : '') + ', ' + b.s + ' Row ' + b.r + ' Level ' + b.l + (c ? ', ' + c.last + ', ' + c.first : ''));
+    sa2.href = 'sms:+14012584940&body=' + encodeURIComponent('Box ' + b.n);
     sa2.textContent = 'TEXT BOX ' + b.n + ' TO ROBBIE';
     d.appendChild(sa2);
     tresults.appendChild(d);
