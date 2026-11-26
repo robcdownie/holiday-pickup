@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build truck-1126 -->
+<!-- build qflash-1 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -41,6 +41,10 @@
   .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; position:sticky; top:0; background:#0b0b0c; z-index:10; padding:8px 0; }
   .tab { flex:1 1 30%; font-size:16px; font-weight:900; padding:12px 4px; border-radius:12px; border:2px solid #44403c; background:#292524; color:#a8a29e; cursor:pointer; min-height:52px; }
   .tab.on { background:#fbbf24; color:#000; border-color:#fbbf24; }
+  @keyframes qpulse { 0%,100% { box-shadow:0 0 0 0 rgba(251,191,36,0); } 50% { box-shadow:0 0 18px 5px rgba(251,191,36,.9); background:#713f12; color:#ffffff; } }
+  .tab.qalert { animation:qpulse 1.2s infinite; border-color:#fbbf24; }
+  @keyframes qpulse2 { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,0); } 50% { box-shadow:0 0 22px 7px rgba(239,68,68,.95); background:#dc2626; color:#ffffff; } }
+  .tab.qurgent { animation:qpulse2 .8s infinite; border-color:#ffffff; }
   .card.picked { opacity:.55; border-color:#166534; }
 
 
@@ -382,7 +386,7 @@ async function syncFromServer(){
     const wChanged = JSON.stringify(waits) !== JSON.stringify(nw);
     waits = nw; saveWaits();
     const changed = JSON.stringify([...picked].sort()) !== JSON.stringify([...np].sort()) || JSON.stringify([...tPicked].sort()) !== JSON.stringify([...nt].sort());
-    picked = np; tPicked = nt; savePicked(); tSave(); setSync(true);
+    picked = np; tPicked = nt; savePicked(); tSave(); setSync(true); updateQueueTab();
     let epochNow = epochAtStart;
     try{ const ctl2 = new AbortController(); const to2 = setTimeout(() => ctl2.abort(), 8000); try{ const rrx = await fetch(FB + '/meta_reset.json', {signal: ctl2.signal}); if(rrx.ok) epochNow = await rrx.json(); } finally { clearTimeout(to2); } }catch(e){}
     if(typeof epochNow === 'number' && epochNow !== epochAtStart){ syncRunning = false; return; }
@@ -465,6 +469,7 @@ let justDone = {};
 function renderQueue(){
   const rows = DATA.filter(r => arrived[r.order] && !picked.has(r.order)).sort((a,b) => arrived[a.order] - arrived[b.order]);
   document.getElementById('queueSummary').innerHTML = '<b>' + rows.length + '</b> ' + (rows.length === 1 ? 'customer' : 'customers') + ' waiting now';
+  updateQueueTab();
   const wrap = document.getElementById('queueList'); wrap.innerHTML = '';
   for(const o of Object.keys(justDone)){ if(!picked.has(o) || Date.now() - justDone[o] > 8000) delete justDone[o]; }
   for(const o of Object.keys(justDone)){
@@ -511,6 +516,15 @@ function renderQueue(){
       wrap.appendChild(el);
     }
   }
+}
+function updateQueueTab(){
+  const tab = document.getElementById('tabQueue'); if(!tab) return;
+  const now = Date.now();
+  let n = 0, longest = 0;
+  for(const r of DATA){ const a = arrived[r.order]; if(a && !picked.has(r.order)){ n++; if(now - a > longest) longest = now - a; } }
+  tab.textContent = n ? 'QUEUE (' + n + ')' : 'QUEUE';
+  tab.classList.toggle('qalert', n > 0 && longest < 10 * 60000);
+  tab.classList.toggle('qurgent', n > 0 && longest >= 10 * 60000);
 }
 function fmtDur(ms){ const m = Math.round(ms / 60000); if(m < 1) return 'UNDER 1 MIN'; return m + ' MIN'; }
 function slotMinutes(t){ const p = t.split(' '); const parts = p[0].split(':'); let h = Number(parts[0]); const m = Number(parts[1]); if(p[1] === 'PM' && h !== 12) h += 12; if(p[1] === 'AM' && h === 12) h = 0; return h * 60 + m; }
@@ -656,7 +670,7 @@ renderQueue();
 renderReport();
 syncFromServer();
 setInterval(syncFromServer, 5000);
-setInterval(()=>{ if(document.getElementById('viewQueue').style.display !== 'none') renderQueue(); if(document.getElementById('viewReport').style.display !== 'none') renderReport(); }, 20000);
+setInterval(()=>{ updateQueueTab(); if(document.getElementById('viewQueue').style.display !== 'none') renderQueue(); if(document.getElementById('viewReport').style.display !== 'none') renderReport(); }, 20000);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncFromServer(); });
 q.addEventListener('input', search);
 document.getElementById('clear').addEventListener('click', ()=>{ q.value=''; search(); q.focus(); });
