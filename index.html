@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build fixround-2 -->
+<!-- build leftlist-1 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -72,6 +72,11 @@
   .slotleft { font-size:20px; font-weight:800; color:#fbbf24; }
   .slot.done .slotleft { color:#4ade80; }
   .slotmeta { color:#a8a29e; font-size:15px; margin-top:2px; }
+  .leftrow { display:flex; align-items:center; gap:10px; }
+  .leftinfo { flex:1; min-width:0; }
+  .leftname { font-size:19px; font-weight:900; }
+  .leftmeta { color:#d6d3d1; font-size:15px; margin-top:2px; }
+  .leftmark { flex:0 0 auto; font-size:15px; font-weight:900; padding:12px 14px; border-radius:10px; border:2px solid #22c55e; background:#14532d; color:#bbf7d0; cursor:pointer; min-height:52px; }
   .bar { height:14px; background:#292524; border-radius:7px; margin-top:10px; overflow:hidden; }
   .barfill { height:100%; background:#22c55e; }
   #resetDay { margin-top:8px; border-color:#7f1d1d; color:#fca5a5; }
@@ -83,6 +88,7 @@
 <div class="tabs">
   <button class="tab on" id="tabLookup" type="button">LOOKUP</button>
   <button class="tab" id="tabDay" type="button">DAY</button>
+  <button class="tab" id="tabLeft" type="button">LEFT</button>
   <button class="tab" id="tabTruck" type="button">TRUCK</button>
 </div>
 <div id="viewLookup">
@@ -100,6 +106,11 @@
   <p style="color:#a8a29e;font-size:14px;margin-bottom:14px">Picked up marks are SHARED: everyone with this page open sees the same marks within a few seconds. Totals per time slot come straight from the manifest.</p>
   <div id="slots"></div>
   <button id="resetDay" type="button">RESET ALL PICKED UP MARKS</button>
+</div>
+<div id="viewLeft" style="display:none">
+  <p id="leftSummary" style="font-size:19px;margin:6px 0 4px"></p>
+  <p style="color:#a8a29e;font-size:14px;margin-bottom:14px">Every order NOT picked up yet, in pickup time order. This is the leftover watch list: when one of these customers shows up, tap MARK PICKED UP here or in LOOKUP and it comes off the list on every phone.</p>
+  <div id="leftList"></div>
 </div>
 <div id="viewTruck" style="display:none">
   <label for="tq">BOX NUMBER CALLED ON THE RADIO</label>
@@ -232,11 +243,11 @@ async function syncFromServer(){
     const changed = JSON.stringify([...picked].sort()) !== JSON.stringify([...np].sort()) || JSON.stringify([...tPicked].sort()) !== JSON.stringify([...nt].sort());
     picked = np; tPicked = nt; savePicked(); tSave(); setSync(true);
     for(const id of Object.keys(pending)){ if(pendingTime(id) < lastResetAt){ delete pending[id]; savePending(); continue; } await pushPending(id); }
-    if(changed){ search(); renderDay(); if(tq.value) truckSearch(); renderStacks(); }
+    if(changed){ search(); renderDay(); renderLeft(); if(tq.value) truckSearch(); renderStacks(); }
   }catch(e){ setSync(false); }
   syncRunning = false;
 }
-function togglePicked(order){ const on = !picked.has(order); if(on){ picked.add(order); } else { picked.delete(order); for(const b of TRUCK){ const c = custFor(b.n); if(c && c.order === order){ const key = b.n + '-' + b.b; tPicked.delete(key); setPending('t' + key, false); pushPending('t' + key); } } tSave(); } savePicked(); search(); renderDay(); setPending('o' + order, on); pushPending('o' + order); }
+function togglePicked(order){ const on = !picked.has(order); if(on){ picked.add(order); } else { picked.delete(order); for(const b of TRUCK){ const c = custFor(b.n); if(c && c.order === order){ const key = b.n + '-' + b.b; tPicked.delete(key); setPending('t' + key, false); pushPending('t' + key); } } tSave(); } savePicked(); search(); renderDay(); renderLeft(); setPending('o' + order, on); pushPending('o' + order); }
 function timeKey(t){ const parts = t.split(' '); let hm = parts[0].split(':'); let h = +hm[0]; const m = +hm[1]; if(parts[1] === 'PM' && h !== 12) h += 12; if(parts[1] === 'AM' && h === 12) h = 0; return h * 60 + m; }
 function renderDay(){
   const total = DATA.length;
@@ -260,21 +271,45 @@ function renderDay(){
     wrap.appendChild(el);
   }
 }
-document.getElementById('resetDay').addEventListener('click', async ()=>{ if(confirm('Clear EVERY picked up mark for the WHOLE TEAM? This cannot be undone.')){ const clearedOrders = [...picked]; const clearedKeys = [...tPicked]; pending = {}; savePending(); picked.clear(); tPicked.clear(); savePicked(); tSave(); search(); renderDay(); const now = Date.now(); lastResetAt = now; try{ const rm = await fetch(FB + '/meta_reset.json', {method:'PUT', body: JSON.stringify(now)}); if(!rm.ok) throw new Error('reset stamp failed'); }catch(e){ setSync(false); } try{ const r = await fetch(FB + '/pickups.json', {method:'DELETE'}); if(!r.ok) throw new Error('reset failed'); setSync(true); syncFromServer(); }catch(e){ for(const o of clearedOrders) setPending('o' + o, false); for(const t of clearedKeys) setPending('t' + t, false); setSync(false); syncFromServer(); } } });
+document.getElementById('resetDay').addEventListener('click', async ()=>{ if(confirm('Clear EVERY picked up mark for the WHOLE TEAM? This cannot be undone.')){ const clearedOrders = [...picked]; const clearedKeys = [...tPicked]; pending = {}; savePending(); picked.clear(); tPicked.clear(); savePicked(); tSave(); search(); renderDay(); renderLeft(); const now = Date.now(); lastResetAt = now; try{ const rm = await fetch(FB + '/meta_reset.json', {method:'PUT', body: JSON.stringify(now)}); if(!rm.ok) throw new Error('reset stamp failed'); }catch(e){ setSync(false); } try{ const r = await fetch(FB + '/pickups.json', {method:'DELETE'}); if(!r.ok) throw new Error('reset failed'); setSync(true); syncFromServer(); }catch(e){ for(const o of clearedOrders) setPending('o' + o, false); for(const t of clearedKeys) setPending('t' + t, false); setSync(false); syncFromServer(); } } });
+function renderLeft(){
+  const rows = DATA.filter(r => !picked.has(r.order)).sort((a,b) => (timeKey(a.time) - timeKey(b.time)) || (a.last + a.first).localeCompare(b.last + b.first));
+  document.getElementById('leftSummary').innerHTML = '<b>' + rows.length + '</b> orders not picked up yet';
+  const wrap = document.getElementById('leftList'); wrap.innerHTML = '';
+  if(!rows.length){ const el = document.createElement('div'); el.className = 'slot done'; el.innerHTML = '<div class="slothead"><span class="slottime">ALL PICKED UP</span></div>'; wrap.appendChild(el); return; }
+  for(const r of rows){
+    const el = document.createElement('div'); el.className = 'slot' + (!r.paid ? ' unpaidcard' : '');
+    const info = document.createElement('div'); info.className = 'leftinfo';
+    info.innerHTML = '<div class="leftname">' + esc(r.last) + ', ' + esc(r.first) + '</div>' +
+      '<div class="leftmeta">Order #: <b>' + esc(r.order) + '</b> &middot; Pickup: <b>' + esc(r.time) + '</b> &middot; Box: <b>' + esc(r.box) + '</b>' + (r.paid ? '' : ' &middot; <span class="unpaid">UNPAID</span>') + '</div>';
+    const row = document.createElement('div'); row.className = 'leftrow';
+    row.appendChild(info);
+    const mb = document.createElement('button'); mb.type = 'button'; mb.className = 'leftmark'; mb.textContent = 'MARK PICKED UP';
+    mb.addEventListener('click', ()=>{ togglePicked(r.order); });
+    row.appendChild(mb);
+    el.appendChild(row);
+    wrap.appendChild(el);
+  }
+}
 function showTab(name){
   document.getElementById('viewLookup').style.display = name === 'lookup' ? '' : 'none';
   document.getElementById('viewDay').style.display = name === 'day' ? '' : 'none';
+  document.getElementById('viewLeft').style.display = name === 'left' ? '' : 'none';
   document.getElementById('viewTruck').style.display = name === 'truck' ? '' : 'none';
   document.getElementById('tabLookup').classList.toggle('on', name === 'lookup');
   document.getElementById('tabDay').classList.toggle('on', name === 'day');
+  document.getElementById('tabLeft').classList.toggle('on', name === 'left');
   document.getElementById('tabTruck').classList.toggle('on', name === 'truck');
   if(name === 'day') renderDay();
+  if(name === 'left') renderLeft();
   if(name === 'truck'){ renderStacks(); document.getElementById('tq').focus(); }
 }
 document.getElementById('tabLookup').addEventListener('click', ()=>showTab('lookup'));
 document.getElementById('tabDay').addEventListener('click', ()=>showTab('day'));
+document.getElementById('tabLeft').addEventListener('click', ()=>showTab('left'));
 document.getElementById('tabTruck').addEventListener('click', ()=>showTab('truck'));
 renderDay();
+renderLeft();
 const TRUCK = [{"n":"92","b":1,"t":1,"s":"RIGHT","r":1,"l":6},{"n":"173","b":1,"t":1,"s":"RIGHT","r":1,"l":5},{"n":"7","b":1,"t":1,"s":"RIGHT","r":1,"l":4},{"n":"87","b":1,"t":1,"s":"RIGHT","r":1,"l":3},{"n":"57","b":1,"t":1,"s":"RIGHT","r":1,"l":2},{"n":"55","b":1,"t":1,"s":"RIGHT","r":1,"l":1},{"n":"95","b":1,"t":1,"s":"RIGHT","r":2,"l":7},{"n":"184","b":1,"t":1,"s":"RIGHT","r":2,"l":6},{"n":"183","b":1,"t":1,"s":"RIGHT","r":2,"l":5},{"n":"182","b":1,"t":1,"s":"RIGHT","r":2,"l":4},{"n":"181","b":1,"t":1,"s":"RIGHT","r":2,"l":3},{"n":"187","b":1,"t":2,"s":"RIGHT","r":2,"l":2},{"n":"187","b":2,"t":2,"s":"RIGHT","r":2,"l":1},{"n":"185","b":1,"t":1,"s":"RIGHT","r":3,"l":6},{"n":"178","b":1,"t":1,"s":"RIGHT","r":3,"l":5},{"n":"174","b":1,"t":1,"s":"RIGHT","r":3,"l":4},{"n":"175","b":1,"t":1,"s":"RIGHT","r":3,"l":3},{"n":"176","b":1,"t":1,"s":"RIGHT","r":3,"l":2},{"n":"180","b":1,"t":1,"s":"RIGHT","r":3,"l":1},{"n":"165","b":1,"t":2,"s":"RIGHT","r":4,"l":5},{"n":"165","b":2,"t":2,"s":"RIGHT","r":4,"l":4},{"n":"169","b":1,"t":1,"s":"RIGHT","r":4,"l":3},{"n":"170","b":1,"t":1,"s":"RIGHT","r":4,"l":2},{"n":"171","b":1,"t":1,"s":"RIGHT","r":4,"l":1},{"n":"127","b":1,"t":1,"s":"RIGHT","r":5,"l":5},{"n":"144","b":1,"t":1,"s":"RIGHT","r":5,"l":4},{"n":"168","b":1,"t":1,"s":"RIGHT","r":5,"l":3},{"n":"159","b":1,"t":1,"s":"RIGHT","r":5,"l":2},{"n":"167","b":1,"t":1,"s":"RIGHT","r":5,"l":1}];
 const tq = document.getElementById('tq');
 const tresults = document.getElementById('tresults');
