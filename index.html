@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build notext-1 -->
+<!-- build qdone-1 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -78,7 +78,7 @@
   .slot.fresh { border-color:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,.45); }
   .qpos { font-size:30px; font-weight:900; color:#38bdf8; flex:0 0 auto; min-width:52px; text-align:center; }
   .qwait { color:#fbbf24; font-weight:900; }
-  .qdone { flex:0 0 auto; font-size:15px; font-weight:900; padding:12px 14px; border-radius:10px; border:2px solid #22c55e; background:#14532d; color:#bbf7d0; cursor:pointer; min-height:52px; }
+  .qdone { display:block; width:100%; margin-top:10px; font-size:20px; font-weight:900; padding:14px; border-radius:12px; border:2px solid #22c55e; background:#15803d; color:#ffffff; cursor:pointer; min-height:62px; }
   .qundo { display:block; margin-top:8px; font-size:14px; font-weight:700; padding:8px 12px; border-radius:8px; border:1px solid #57534e; background:#292524; color:#a8a29e; cursor:pointer; }
   .statrow { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
   .stat { flex:1 1 28%; background:#1c1917; border:2px solid #44403c; border-radius:14px; padding:12px; }
@@ -402,10 +402,10 @@ function renderQueue(){
     info.innerHTML = '<div class="leftname">' + esc(r.last) + ', ' + esc(r.first) + ' &middot; BOX ' + esc(r.box) + '</div>' +
       '<div class="leftmeta">Order #: <b>' + esc(r.order) + '</b> &middot; Pickup: <b>' + esc(r.time) + '</b> &middot; Folder: <b>' + esc(folderFor(r)) + '</b>' + (r.paid ? '' : ' &middot; <span class="unpaid">UNPAID</span>') + '<br><b style="color:#7dd3fc">' + esc(locFor(r)) + '</b><br><span class="qwait">' + waitText(arrived[r.order]) + '</span></div>';
     row.appendChild(info);
-    const cb = document.createElement('button'); cb.type = 'button'; cb.className = 'qdone'; cb.textContent = 'COMPLETED';
-    cb.addEventListener('click', ()=>{ togglePicked(r.order); });
-    row.appendChild(cb);
     el.appendChild(row);
+    const cb = document.createElement('button'); cb.type = 'button'; cb.className = 'qdone'; cb.textContent = 'COMPLETED: BOX IS OUT';
+    cb.addEventListener('click', ()=>{ togglePicked(r.order); });
+    el.appendChild(cb);
     const ub = document.createElement('button'); ub.type = 'button'; ub.className = 'qundo'; ub.textContent = 'NOT HERE (UNDO ARRIVED)';
     ub.addEventListener('click', ()=>{ setArrived(r.order, false); });
     el.appendChild(ub);
