@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build swap-1126 -->
+<!-- build fixes-1126 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -37,16 +37,27 @@
   .unpaid { display:inline-block; background:#dc2626; color:#fff; font-weight:900; padding:4px 10px; border-radius:8px; font-size:17px; }
   .paid { display:inline-block; background:#166534; color:#dcfce7; font-weight:700; padding:4px 10px; border-radius:8px; font-size:15px; }
   .none { font-size:20px; color:#fca5a5; font-weight:700; padding: 18px 4px; }
-  .hint { color:#78716c; font-size:14px; margin-top: 18px; line-height:1.5; }
-  .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .hint { color:#a8a29e; font-size:14px; margin-top: 18px; line-height:1.5; }
+  .tabs { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; position:sticky; top:0; background:#0b0b0c; z-index:10; padding:8px 0; }
   .tab { flex:1 1 30%; font-size:16px; font-weight:900; padding:12px 4px; border-radius:12px; border:2px solid #44403c; background:#292524; color:#a8a29e; cursor:pointer; min-height:52px; }
   .tab.on { background:#fbbf24; color:#000; border-color:#fbbf24; }
   .card.picked { opacity:.55; border-color:#166534; }
 
 
-  .smsbtn { display:block; width:100%; margin-top:8px; min-height:52px; line-height:52px; text-align:center; font-size:18px; font-weight:900; border-radius:10px; background:#16a34a; color:#fff; text-decoration:none; }
-
   .card.unpaidcard { background:#dc2626; border:4px solid #ffffff; animation:unpaidpulse 1.2s infinite; }
+  .slot.unpaidcard { background:#dc2626; border:3px solid #ffffff; animation:unpaidpulse 1.2s infinite; }
+  .slot.unpaidcard .leftname, .slot.unpaidcard .slottime { color:#ffffff; }
+  .slot.unpaidcard .leftmeta, .slot.unpaidcard .slotmeta { color:#fecaca; }
+  .slot.unpaidcard .leftmeta b, .slot.unpaidcard .qpos, .slot.unpaidcard .qwait { color:#ffffff; }
+  .summary { font-size:20px; font-weight:800; margin-bottom:8px; }
+  .note { color:#a8a29e; font-size:14px; line-height:1.5; margin-bottom:14px; }
+  .big { font-size:30px; font-weight:900; }
+  .qbox { font-size:27px; font-weight:900; color:#fbbf24; letter-spacing:.5px; }
+  .slot.unpaidcard .qbox { color:#ffffff; }
+  .newpill { display:inline-block; background:#0369a1; color:#fff; font-size:14px; font-weight:900; padding:3px 9px; border-radius:8px; margin-left:8px; vertical-align:middle; }
+  .donestrip { display:flex; align-items:center; gap:10px; background:#14532d; border:2px solid #22c55e; border-radius:12px; padding:10px 12px; margin-bottom:10px; }
+  .donestrip .dtxt { flex:1; font-size:16px; font-weight:800; color:#bbf7d0; }
+  .donestrip .dundo { flex:0 0 auto; min-height:48px; font-size:15px; font-weight:900; padding:10px 16px; border-radius:10px; border:2px solid #fbbf24; background:#292524; color:#fbbf24; cursor:pointer; }
   @keyframes unpaidpulse { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,.9); } 50% { box-shadow:0 0 0 12px rgba(239,68,68,0); } }
   .card.unpaidcard .box { color:#ffffff; }
   .card.unpaidcard .boxlabel { color:#fecaca; }
@@ -77,9 +88,9 @@
   .arrivebtn.on { background:#075985; color:#e0f2fe; border-color:#e0f2fe; }
   .slot.fresh { border-color:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,.45); }
   .qpos { font-size:30px; font-weight:900; color:#38bdf8; flex:0 0 auto; min-width:52px; text-align:center; }
-  .qwait { color:#fbbf24; font-weight:900; }
+  .qwait { color:#fbbf24; font-weight:900; font-size:17px; }
   .qdone { display:block; width:100%; margin-top:10px; font-size:20px; font-weight:900; padding:14px; border-radius:12px; border:2px solid #22c55e; background:#15803d; color:#ffffff; cursor:pointer; min-height:62px; }
-  .qundo { display:block; margin-top:8px; font-size:14px; font-weight:700; padding:8px 12px; border-radius:8px; border:1px solid #57534e; background:#292524; color:#a8a29e; cursor:pointer; }
+  .qundo { display:block; margin-top:8px; font-size:15px; font-weight:700; padding:10px 12px; min-height:48px; border-radius:8px; border:1px solid #57534e; background:#292524; color:#a8a29e; cursor:pointer; }
   .statrow { display:flex; flex-wrap:wrap; gap:10px; margin-bottom:12px; }
   .stat { flex:1 1 28%; background:#1c1917; border:2px solid #44403c; border-radius:14px; padding:12px; }
   .statnum { font-size:28px; font-weight:900; color:#facc15; }
@@ -97,7 +108,7 @@
   .leftinfo { flex:1; min-width:0; }
   .leftname { font-size:19px; font-weight:900; }
   .leftmeta { color:#d6d3d1; font-size:15px; margin-top:2px; }
-  .leftmark { flex:0 0 auto; font-size:15px; font-weight:900; padding:12px 14px; border-radius:10px; border:2px solid #22c55e; background:#14532d; color:#bbf7d0; cursor:pointer; min-height:52px; }
+  .leftmark { display:block; width:100%; margin-top:8px; font-size:17px; font-weight:900; padding:14px; border-radius:10px; border:2px solid #22c55e; background:#14532d; color:#bbf7d0; cursor:pointer; min-height:54px; }
   .bar { height:14px; background:#292524; border-radius:7px; margin-top:10px; overflow:hidden; }
   .barfill { height:100%; background:#22c55e; }
   #resetDay { margin-top:8px; border-color:#7f1d1d; color:#fca5a5; }
@@ -116,7 +127,7 @@
 </div>
 <div id="viewLookup">
 <label for="q">CUSTOMER NAME</label>
-<input id="q" type="search" autocomplete="off" autocapitalize="characters" placeholder="Type last name, or first and last" autofocus>
+<input id="q" type="search" autocomplete="off" autocapitalize="characters" placeholder="Name, box number, or order number" autofocus>
 <div class="row">
   <button id="clear" type="button">CLEAR</button>
 </div>
@@ -131,7 +142,7 @@
 <div id="viewDay" style="display:none">
   <div class="bigpct" id="dayPct">0%</div>
   <p id="daySummary" style="font-size:19px;margin:6px 0 4px"></p>
-  <p style="color:#a8a29e;font-size:14px;margin-bottom:14px">Picked up marks are SHARED: everyone with this page open sees the same marks within a few seconds. Totals per time slot come straight from the manifest.</p>
+  <p style="color:#a8a29e;font-size:14px;margin-bottom:14px">Picked up marks are SHARED: everyone with this page open sees the same marks within a few seconds. Totals per time slot come from today's manifest plus yesterday's leftovers still on the board.</p>
   <div id="slots"></div>
   <button id="resetDay" type="button">RESET ALL PICKED UP MARKS</button>
 </div>
@@ -171,6 +182,7 @@ function search(){
   let exact = [], partial = [];
   for(const r of DATA){
     if(norm(r.order) === n || norm(r.box) === n){ exact.push(r); continue; }
+    if(/^\d{2,}$/.test(n) && (r.box.startsWith(n) || r.order.startsWith(n))){ partial.push(r); continue; }
     const words = norm(r.last + ' ' + r.first).split(' ');
     const scores = tokens.map(t => tokenScore(t, words));
     if(scores.every(s => s === 2)) exact.push(r);
@@ -247,25 +259,36 @@ async function fbWrite(id, val){
   const r = val ? await fetch(FB + '/pickups/' + id + '.json', {method:'PUT', body:'true'}) : await fetch(FB + '/pickups/' + id + '.json', {method:'DELETE'});
   if(!r.ok) throw new Error('fb write failed');
 }
-async function pushPending(id){
-  if(!(id in pending)) return true;
-  const v = pending[id];
-  try{ await fbWrite(id, pendingVal(id)); if(pending[id] === v) delete pending[id]; savePending(); return true; }
-  catch(e){ setSync(false); return false; }
+const pChains = {};
+function pushPending(id){
+  const run = async () => {
+    if(!(id in pending)) return true;
+    const v = pending[id];
+    try{ await fbWrite(id, pendingVal(id)); if(pending[id] === v) delete pending[id]; savePending(); return true; }
+    catch(e){ setSync(false); return false; }
+  };
+  pChains[id] = (pChains[id] || Promise.resolve()).then(run, run);
+  return pChains[id];
 }
 let arrived = {}; try{ arrived = JSON.parse(localStorage.getItem('hm_arrived_v1') || '{}') || {}; }catch(e){ arrived = {}; }
 let aPending = {}; try{ aPending = JSON.parse(localStorage.getItem('hm_apending_v1') || '{}') || {}; }catch(e){ aPending = {}; }
+for(const o of Object.keys(aPending)){ if(typeof aPending[o] !== 'object' || aPending[o] === null) aPending[o] = {v: aPending[o], t: 0}; }
 function saveArrived(){ try{ localStorage.setItem('hm_arrived_v1', JSON.stringify(arrived)); }catch(e){} }
 function saveAPending(){ try{ localStorage.setItem('hm_apending_v1', JSON.stringify(aPending)); }catch(e){} }
 function aSetPending(order, ts){ aPending[order] = {v: ts, t: Date.now()}; saveAPending(); }
-async function aPush(order){
-  if(!(order in aPending)) return true;
-  const rec = aPending[order];
-  try{
-    const r = rec.v ? await fetch(FB + '/arrivals/o' + order + '.json', {method:'PUT', body: JSON.stringify(rec.v)}) : await fetch(FB + '/arrivals/o' + order + '.json', {method:'DELETE'});
-    if(!r.ok) throw new Error('arrival write failed');
-    if(aPending[order] === rec) delete aPending[order]; saveAPending(); return true;
-  }catch(e){ setSync(false); return false; }
+const aChains = {};
+function aPush(order){
+  const run = async () => {
+    if(!(order in aPending)) return true;
+    const rec = aPending[order];
+    try{
+      const r = rec.v ? await fetch(FB + '/arrivals/o' + order + '.json', {method:'PUT', body: JSON.stringify(rec.v)}) : await fetch(FB + '/arrivals/o' + order + '.json', {method:'DELETE'});
+      if(!r.ok) throw new Error('arrival write failed');
+      if(aPending[order] === rec) delete aPending[order]; saveAPending(); return true;
+    }catch(e){ setSync(false); return false; }
+  };
+  aChains[order] = (aChains[order] || Promise.resolve()).then(run, run);
+  return aChains[order];
 }
 function setArrived(order, on){
   if(on){ arrived[order] = Date.now(); } else { delete arrived[order]; }
@@ -277,35 +300,60 @@ function clearArrived(order){
 let waits = {};
 try{ waits = JSON.parse(localStorage.getItem('hm_waits_v1') || '{}') || {}; }catch(e){ waits = {}; }
 function saveWaits(){ try{ localStorage.setItem('hm_waits_v1', JSON.stringify(waits)); }catch(e){} }
+let wPending = {};
+try{ wPending = JSON.parse(localStorage.getItem('hm_wpending_v1') || '{}') || {}; }catch(e){ wPending = {}; }
+for(const o of Object.keys(wPending)){ if(typeof wPending[o] !== 'object' || wPending[o] === null) wPending[o] = {v: 0, t: 0}; }
+function saveWPending(){ try{ localStorage.setItem('hm_wpending_v1', JSON.stringify(wPending)); }catch(e){} }
+function wSetPending(order, rec){ wPending[order] = {v: rec, t: Date.now()}; saveWPending(); }
+const wChains = {};
+function wPush(order){
+  const run = async () => {
+    if(!(order in wPending)) return true;
+    const rec = wPending[order];
+    try{
+      const r = rec.v ? await fetch(FB + '/waits/o' + order + '.json', {method:'PUT', body: JSON.stringify(rec.v)}) : await fetch(FB + '/waits/o' + order + '.json', {method:'DELETE'});
+      if(!r.ok) throw new Error('wait write failed');
+      if(wPending[order] === rec) delete wPending[order]; saveWPending(); return true;
+    }catch(e){ setSync(false); return false; }
+  };
+  wChains[order] = (wChains[order] || Promise.resolve()).then(run, run);
+  return wChains[order];
+}
 function recordWait(order, aTs){
   if(!aTs || waits[order]) return;
+  if(Date.now() - aTs > 12 * 3600 * 1000) return;
   waits[order] = {a: aTs, c: Date.now()}; saveWaits();
-  fetch(FB + '/waits/o' + order + '.json', {method:'PUT', body: JSON.stringify(waits[order])}).catch(()=>{});
+  wSetPending(order, waits[order]); wPush(order);
 }
 function removeWait(order){
-  if(!(order in waits)) return;
   delete waits[order]; saveWaits();
-  fetch(FB + '/waits/o' + order + '.json', {method:'DELETE'}).catch(()=>{});
+  wSetPending(order, 0); wPush(order);
 }
 let syncRunning = false;
 let lastResetAt = 0;
 async function syncFromServer(){
   if(syncRunning) return; syncRunning = true;
   try{
-    const [r, rr, ra, rw] = await Promise.all([fetch(FB + '/pickups.json'), fetch(FB + '/meta_reset.json'), fetch(FB + '/arrivals.json'), fetch(FB + '/waits.json')]);
+    const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 8000);
+    let r, rr, ra, rw;
+    try{ [r, rr, ra, rw] = await Promise.all([fetch(FB + '/pickups.json', {signal: ctl.signal}), fetch(FB + '/meta_reset.json', {signal: ctl.signal}), fetch(FB + '/arrivals.json', {signal: ctl.signal}), fetch(FB + '/waits.json', {signal: ctl.signal})]); } finally { clearTimeout(to); }
     if(!r.ok) throw new Error('fb read failed');
     const data = await r.json();
     const aData = ra.ok ? await ra.json() : null;
     const wData = rw.ok ? await rw.json() : null;
     const resetVal = rr.ok ? await rr.json() : null;
-    lastResetAt = (typeof resetVal === 'number') ? resetVal : 0;
+    if(typeof resetVal === 'number') lastResetAt = resetVal;
+    else if(lastResetAt > 0){ syncRunning = false; return; }
+    const epochAtStart = lastResetAt;
     const np = new Set(), nt = new Set();
     if(data){ for(const k of Object.keys(data)){ if(!data[k]) continue; if(k.startsWith('o')) np.add(k.slice(1)); else if(k.startsWith('t')) nt.add(k.slice(1)); } }
     let mergedDone = false; try{ mergedDone = localStorage.getItem('hm_merged_v1') === '1'; }catch(e){}
     if(!mergedDone){
-      for(const o of picked){ if(!np.has(o) && !('o' + o in pending)) setPending('o' + o, true); }
-      for(const t of tPicked){ if(!nt.has(t) && !('t' + t in pending)) setPending('t' + t, true); }
-      savePending();
+      if(lastResetAt === 0){
+        for(const o of picked){ if(!np.has(o) && !('o' + o in pending)) setPending('o' + o, true); }
+        for(const t of tPicked){ if(!nt.has(t) && !('t' + t in pending)) setPending('t' + t, true); }
+        savePending();
+      }
       try{ localStorage.setItem('hm_merged_v1', '1'); }catch(e){}
     }
     for(const id of Object.keys(pending)){ if(pendingTime(id) < lastResetAt){ delete pending[id]; savePending(); } }
@@ -325,18 +373,30 @@ async function syncFromServer(){
     const nw = {};
     if(wData){ for(const k of Object.keys(wData)){ if(k.startsWith('o') && wData[k] && typeof wData[k].a === 'number' && typeof wData[k].c === 'number') nw[k.slice(1)] = wData[k]; } }
     for(const o of Object.keys(nw)){ if(nw[o].c < lastResetAt) delete nw[o]; }
-    for(const o of Object.keys(waits)){ if(!(o in nw)) nw[o] = waits[o]; }
+    for(const o of Object.keys(wPending)){ if(wPending[o].t < lastResetAt){ delete wPending[o]; saveWPending(); } }
+    for(const o of Object.keys(wPending)){ if(wPending[o].v) nw[o] = wPending[o].v; else delete nw[o]; }
     const wChanged = JSON.stringify(waits) !== JSON.stringify(nw);
     waits = nw; saveWaits();
     const changed = JSON.stringify([...picked].sort()) !== JSON.stringify([...np].sort()) || JSON.stringify([...tPicked].sort()) !== JSON.stringify([...nt].sort());
     picked = np; tPicked = nt; savePicked(); tSave(); setSync(true);
+    let epochNow = epochAtStart;
+    try{ const ctl2 = new AbortController(); const to2 = setTimeout(() => ctl2.abort(), 8000); try{ const rrx = await fetch(FB + '/meta_reset.json', {signal: ctl2.signal}); if(rrx.ok) epochNow = await rrx.json(); } finally { clearTimeout(to2); } }catch(e){}
+    if(typeof epochNow === 'number' && epochNow !== epochAtStart){ syncRunning = false; return; }
     for(const id of Object.keys(pending)){ if(pendingTime(id) < lastResetAt){ delete pending[id]; savePending(); continue; } await pushPending(id); }
     for(const o of Object.keys(aPending)){ await aPush(o); }
-    if(changed || aChanged || wChanged){ search(); renderDay(); renderLeft(); renderQueue(); renderReport(); if(tq.value) truckSearch(); renderStacks(); }
+    for(const o of Object.keys(wPending)){ await wPush(o); }
+    if(changed || aChanged || wChanged){
+      if(curView === 'lookup') search();
+      else if(curView === 'day') renderDay();
+      else if(curView === 'left') renderLeft();
+      else if(curView === 'queue') renderQueue();
+      else if(curView === 'report') renderReport();
+      else if(curView === 'truck'){ if(tq.value) truckSearch(); renderStacks(); }
+    }
   }catch(e){ setSync(false); }
   syncRunning = false;
 }
-function togglePicked(order){ const on = !picked.has(order); if(on){ const aTs = arrived[order] || (aPending[order] && aPending[order].v) || 0; if(aTs) recordWait(order, aTs); else { fetch(FB + '/arrivals/o' + order + '.json').then(r => r.json()).then(ts => { if(typeof ts === 'number' && ts > 0) recordWait(order, ts); }).catch(()=>{}); } picked.add(order); clearArrived(order); } else { removeWait(order); picked.delete(order); for(const b of TRUCK){ const c = custFor(b.n); if(c && c.order === order){ const key = b.n + '-' + b.b; tPicked.delete(key); setPending('t' + key, false); pushPending('t' + key); } } tSave(); } savePicked(); search(); renderDay(); renderLeft(); renderQueue(); setPending('o' + order, on); pushPending('o' + order); }
+function togglePicked(order){ const on = !picked.has(order); if(on){ const aTs = arrived[order] || (aPending[order] && aPending[order].v) || 0; if(aTs) recordWait(order, aTs); else { fetch(FB + '/arrivals/o' + order + '.json').then(r => r.json()).then(ts => { if(typeof ts === 'number' && ts > 0 && ts > lastResetAt && picked.has(order)) recordWait(order, ts); }).catch(()=>{}); } picked.add(order); clearArrived(order); } else { removeWait(order); picked.delete(order); for(const b of TRUCK){ const c = custFor(b.n); if(c && c.order === order){ const key = b.n + '-' + b.b; tPicked.delete(key); setPending('t' + key, false); pushPending('t' + key); } } tSave(); } savePicked(); search(); renderDay(); renderLeft(); renderQueue(); setPending('o' + order, on); pushPending('o' + order); }
 function timeKey(t){ const parts = t.split(' '); let hm = parts[0].split(':'); let h = +hm[0]; const m = +hm[1]; if(parts[1] === 'PM' && h !== 12) h += 12; if(parts[1] === 'AM' && h === 12) h = 0; return h * 60 + m; }
 function renderDay(){
   const total = DATA.length;
@@ -360,7 +420,7 @@ function renderDay(){
     wrap.appendChild(el);
   }
 }
-document.getElementById('resetDay').addEventListener('click', async ()=>{ if(confirm('Clear EVERY picked up mark for the WHOLE TEAM? This cannot be undone.')){ const clearedOrders = [...picked]; const clearedKeys = [...tPicked]; pending = {}; savePending(); aPending = {}; saveAPending(); arrived = {}; saveArrived(); waits = {}; saveWaits(); picked.clear(); tPicked.clear(); savePicked(); tSave(); search(); renderDay(); renderLeft(); renderQueue(); renderReport(); const now = Date.now(); lastResetAt = now; try{ const rm = await fetch(FB + '/meta_reset.json', {method:'PUT', body: JSON.stringify(now)}); if(!rm.ok) throw new Error('reset stamp failed'); }catch(e){ setSync(false); } try{ await fetch(FB + '/arrivals.json', {method:'DELETE'}); await fetch(FB + '/waits.json', {method:'DELETE'}); const r = await fetch(FB + '/pickups.json', {method:'DELETE'}); if(!r.ok) throw new Error('reset failed'); setSync(true); syncFromServer(); }catch(e){ for(const o of clearedOrders) setPending('o' + o, false); for(const t of clearedKeys) setPending('t' + t, false); setSync(false); syncFromServer(); } } });
+document.getElementById('resetDay').addEventListener('click', async ()=>{ if(confirm('Clear EVERY picked up mark for the WHOLE TEAM? This cannot be undone.')){ const clearedOrders = [...picked]; const clearedKeys = [...tPicked]; pending = {}; savePending(); aPending = {}; saveAPending(); arrived = {}; saveArrived(); waits = {}; saveWaits(); wPending = {}; saveWPending(); picked.clear(); tPicked.clear(); savePicked(); tSave(); search(); renderDay(); renderLeft(); renderQueue(); renderReport(); const now = Date.now(); lastResetAt = now; let epochOk = true; try{ const rm = await fetch(FB + '/meta_reset.json', {method:'PUT', body: JSON.stringify(now)}); if(!rm.ok) throw new Error('reset stamp failed'); }catch(e){ epochOk = false; setSync(false); } if(!epochOk){ syncFromServer(); return; } try{ await fetch(FB + '/arrivals.json', {method:'DELETE'}); await fetch(FB + '/waits.json', {method:'DELETE'}); const r = await fetch(FB + '/pickups.json', {method:'DELETE'}); if(!r.ok) throw new Error('reset failed'); setSync(true); syncFromServer(); }catch(e){ for(const o of clearedOrders) setPending('o' + o, false); for(const t of clearedKeys) setPending('t' + t, false); setSync(false); syncFromServer(); } } });
 function renderLeft(){
   const rows = DATA.filter(r => !picked.has(r.order)).sort((a,b) => (timeKey(a.time) - timeKey(b.time)) || (a.last + a.first).localeCompare(b.last + b.first));
   document.getElementById('leftSummary').innerHTML = '<b>' + rows.length + '</b> orders not picked up yet';
@@ -370,13 +430,13 @@ function renderLeft(){
     const el = document.createElement('div'); el.className = 'slot' + (!r.paid ? ' unpaidcard' : '');
     const info = document.createElement('div'); info.className = 'leftinfo';
     info.innerHTML = '<div class="leftname">' + esc(r.last) + ', ' + esc(r.first) + '</div>' +
-      '<div class="leftmeta">Order #: <b>' + esc(r.order) + '</b> &middot; Pickup: <b>' + esc(r.time) + '</b> &middot; Box: <b>' + esc(r.box) + '</b> &middot; Folder: <b>' + esc(folderFor(r)) + '</b>' + (r.paid ? '' : ' &middot; <span class="unpaid">UNPAID</span>') + '</div>';
+      '<div class="leftmeta">Order #: <b>' + esc(r.order) + '</b> &middot; Pickup: <b>' + esc(r.time) + '</b> &middot; Box: <b>' + esc(r.box) + '</b> &middot; Folder: <b>' + esc(folderFor(r)) + '</b>' + (r.paid ? '' : ' &middot; <span class="unpaid">UNPAID</span>') + '<br>' + locHtml(r) + '</div>';
     const row = document.createElement('div'); row.className = 'leftrow';
     row.appendChild(info);
     const mb = document.createElement('button'); mb.type = 'button'; mb.className = 'leftmark'; mb.textContent = 'MARK PICKED UP';
     mb.addEventListener('click', ()=>{ togglePicked(r.order); });
-    row.appendChild(mb);
     el.appendChild(row);
+    el.appendChild(mb);
     wrap.appendChild(el);
   }
 }
@@ -388,23 +448,41 @@ function locFor(r){
   const parts = [...new Set(es.map(b => b.s + ' · ROW ' + b.r + ' · LEVEL ' + b.l))];
   return parts.join('  +  ');
 }
+function locHtml(r){
+  if(r.box === 'SF') return '<b style="color:#7dd3fc">PRODUCE COOLER (STORE FULFILLED)</b>';
+  const es = TRUCK.filter(b => b.n === r.box);
+  if(!es.length) return '<span style="color:#a8a29e">Trailer location not counted yet</span>';
+  return '<b style="color:#7dd3fc">' + esc(locFor(r)) + '</b>';
+}
+let justDone = {};
 function renderQueue(){
   const rows = DATA.filter(r => arrived[r.order] && !picked.has(r.order)).sort((a,b) => arrived[a.order] - arrived[b.order]);
   document.getElementById('queueSummary').innerHTML = '<b>' + rows.length + '</b> ' + (rows.length === 1 ? 'customer' : 'customers') + ' waiting now';
   const wrap = document.getElementById('queueList'); wrap.innerHTML = '';
+  for(const o of Object.keys(justDone)){ if(!picked.has(o) || Date.now() - justDone[o] > 8000) delete justDone[o]; }
+  for(const o of Object.keys(justDone)){
+    const r = DATA.find(x => x.order === o); if(!r) continue;
+    const strip = document.createElement('div'); strip.className = 'donestrip';
+    const tx = document.createElement('div'); tx.className = 'dtxt'; tx.textContent = 'DONE: ' + r.last + ', ' + r.first + ' · BOX ' + r.box;
+    const un = document.createElement('button'); un.type = 'button'; un.className = 'dundo'; un.textContent = 'UNDO';
+    un.addEventListener('click', ()=>{ delete justDone[o]; togglePicked(o); });
+    strip.appendChild(tx); strip.appendChild(un); wrap.appendChild(strip);
+  }
   if(!rows.length){ const el = document.createElement('div'); el.className = 'slot done'; el.innerHTML = '<div class="slothead"><span class="slottime">NOBODY WAITING</span></div><div class="slotmeta">When a customer checks in, tap ARRIVED on their card in LOOKUP and they will appear here.</div>'; wrap.appendChild(el); return; }
   rows.forEach((r, i) => {
-    const el = document.createElement('div'); el.className = 'slot' + (!r.paid ? ' unpaidcard' : '') + (Date.now() - arrived[r.order] < 30000 ? ' fresh' : '');
+    const fresh = Date.now() - arrived[r.order] < 90000;
+    const el = document.createElement('div'); el.className = 'slot' + (!r.paid ? ' unpaidcard' : '') + (fresh ? ' fresh' : '');
     const row = document.createElement('div'); row.className = 'leftrow';
     const pos = document.createElement('div'); pos.className = 'qpos'; pos.textContent = (i + 1);
     row.appendChild(pos);
     const info = document.createElement('div'); info.className = 'leftinfo';
-    info.innerHTML = '<div class="leftname">' + esc(r.last) + ', ' + esc(r.first) + ' &middot; BOX ' + esc(r.box) + '</div>' +
-      '<div class="leftmeta">Order #: <b>' + esc(r.order) + '</b> &middot; Pickup: <b>' + esc(r.time) + '</b> &middot; Folder: <b>' + esc(folderFor(r)) + '</b>' + (r.paid ? '' : ' &middot; <span class="unpaid">UNPAID</span>') + '<br><b style="color:#7dd3fc">' + esc(locFor(r)) + '</b><br><span class="qwait">' + waitText(arrived[r.order]) + '</span></div>';
+    info.innerHTML = '<div class="leftname">' + esc(r.last) + ', ' + esc(r.first) + (fresh ? '<span class="newpill">NEW</span>' : '') + '</div>' +
+      '<div class="qbox">BOX ' + esc(r.box) + '</div>' +
+      '<div class="leftmeta">Order #: <b>' + esc(r.order) + '</b> &middot; Pickup: <b>' + esc(r.time) + '</b> &middot; Folder: <b>' + esc(folderFor(r)) + '</b>' + (r.paid ? '' : ' &middot; <span class="unpaid">UNPAID</span>') + '<br>' + locHtml(r) + '<br><span class="qwait">' + waitText(arrived[r.order]) + '</span></div>';
     row.appendChild(info);
     el.appendChild(row);
     const cb = document.createElement('button'); cb.type = 'button'; cb.className = 'qdone'; cb.textContent = 'COMPLETED: BOX IS OUT';
-    cb.addEventListener('click', ()=>{ togglePicked(r.order); });
+    cb.addEventListener('click', ()=>{ cb.disabled = true; justDone[r.order] = Date.now(); togglePicked(r.order); });
     el.appendChild(cb);
     const ub = document.createElement('button'); ub.type = 'button'; ub.className = 'qundo'; ub.textContent = 'NOT HERE (UNDO ARRIVED)';
     ub.addEventListener('click', ()=>{ setArrived(r.order, false); });
@@ -434,7 +512,7 @@ function renderReport(){
     const max = ds[ds.length - 1];
     h += '<div class="statrow">'
       + '<div class="stat"><div class="statnum">' + fmtDur(avg) + '</div><div class="statlbl">AVERAGE WAIT, ARRIVED TO DONE</div></div>'
-      + '<div class="stat"><div class="statnum">' + fmtDur(med) + '</div><div class="statlbl">MEDIAN WAIT</div></div>'
+      + '<div class="stat"><div class="statnum">' + fmtDur(med) + '</div><div class="statlbl">TYPICAL WAIT (MEDIAN)</div></div>'
       + '<div class="stat"><div class="statnum">' + fmtDur(max) + '</div><div class="statlbl">LONGEST WAIT</div></div></div>';
     const b = [0, 0, 0, 0];
     for(const d of ds){ if(d < 5 * 60000) b[0]++; else if(d < 10 * 60000) b[1]++; else if(d < 20 * 60000) b[2]++; else b[3]++; }
@@ -466,7 +544,9 @@ function renderReport(){
   }
   body.innerHTML = h;
 }
+let curView = 'lookup';
 function showTab(name){
+  curView = name;
   document.getElementById('viewLookup').style.display = name === 'lookup' ? '' : 'none';
   document.getElementById('viewQueue').style.display = name === 'queue' ? '' : 'none';
   document.getElementById('viewDay').style.display = name === 'day' ? '' : 'none';
@@ -479,6 +559,7 @@ function showTab(name){
   document.getElementById('tabLeft').classList.toggle('on', name === 'left');
   document.getElementById('tabTruck').classList.toggle('on', name === 'truck');
   document.getElementById('tabReport').classList.toggle('on', name === 'report');
+  if(name === 'lookup'){ search(); q.focus(); }
   if(name === 'day') renderDay();
   if(name === 'left') renderLeft();
   if(name === 'queue') renderQueue();
@@ -491,10 +572,6 @@ document.getElementById('tabDay').addEventListener('click', ()=>showTab('day'));
 document.getElementById('tabLeft').addEventListener('click', ()=>showTab('left'));
 document.getElementById('tabTruck').addEventListener('click', ()=>showTab('truck'));
 document.getElementById('tabReport').addEventListener('click', ()=>showTab('report'));
-renderDay();
-renderLeft();
-renderQueue();
-renderReport();
 const TRUCK = [{"n":"92","b":1,"t":1,"s":"RIGHT","r":1,"l":6},{"n":"173","b":1,"t":1,"s":"RIGHT","r":1,"l":5},{"n":"7","b":1,"t":1,"s":"RIGHT","r":1,"l":4},{"n":"87","b":1,"t":1,"s":"RIGHT","r":1,"l":3},{"n":"57","b":1,"t":1,"s":"RIGHT","r":1,"l":2},{"n":"55","b":1,"t":1,"s":"RIGHT","r":1,"l":1},{"n":"95","b":1,"t":1,"s":"RIGHT","r":2,"l":7},{"n":"184","b":1,"t":1,"s":"RIGHT","r":2,"l":6},{"n":"183","b":1,"t":1,"s":"RIGHT","r":2,"l":5},{"n":"182","b":1,"t":1,"s":"RIGHT","r":2,"l":4},{"n":"181","b":1,"t":1,"s":"RIGHT","r":2,"l":3},{"n":"187","b":1,"t":2,"s":"RIGHT","r":2,"l":2},{"n":"187","b":2,"t":2,"s":"RIGHT","r":2,"l":1},{"n":"185","b":1,"t":1,"s":"RIGHT","r":3,"l":6},{"n":"178","b":1,"t":1,"s":"RIGHT","r":3,"l":5},{"n":"174","b":1,"t":1,"s":"RIGHT","r":3,"l":4},{"n":"175","b":1,"t":1,"s":"RIGHT","r":3,"l":3},{"n":"176","b":1,"t":1,"s":"RIGHT","r":3,"l":2},{"n":"180","b":1,"t":1,"s":"RIGHT","r":3,"l":1},{"n":"165","b":1,"t":2,"s":"RIGHT","r":4,"l":5},{"n":"165","b":2,"t":2,"s":"RIGHT","r":4,"l":4},{"n":"169","b":1,"t":1,"s":"RIGHT","r":4,"l":3},{"n":"170","b":1,"t":1,"s":"RIGHT","r":4,"l":2},{"n":"171","b":1,"t":1,"s":"RIGHT","r":4,"l":1},{"n":"127","b":1,"t":1,"s":"RIGHT","r":5,"l":5},{"n":"144","b":1,"t":1,"s":"RIGHT","r":5,"l":4},{"n":"168","b":1,"t":1,"s":"RIGHT","r":5,"l":3},{"n":"159","b":1,"t":1,"s":"RIGHT","r":5,"l":2},{"n":"167","b":1,"t":1,"s":"RIGHT","r":5,"l":1}];
 const tq = document.getElementById('tq');
 const tresults = document.getElementById('tresults');
@@ -507,7 +584,7 @@ function truckSearch(){
   tresults.innerHTML = '';
   if(!v){ tcount.textContent = truckCountText(); return; }
   let hits = TRUCK.filter(b => b.n === v);
-  if(!hits.length){ tcount.textContent = ''; tresults.innerHTML = '<p class="none">Box ' + esc(v) + ' is not in the trailer list. Box 33 was not found in the count, and SF orders are not in the trailer.</p>'; return; }
+  if(!hits.length){ tcount.textContent = ''; tresults.innerHTML = '<p class="none">Box ' + esc(v) + ' is not in the trailer count on this tab. SF orders are not in the trailer, they are in the produce cooler.</p>'; return; }
   const orders = new Set(hits.map(b => b.n));
   tcount.textContent = hits.length + (hits.length === 1 ? ' box' : ' boxes') + ' for ' + orders.size + (orders.size === 1 ? ' order' : ' orders');
   for(const b of hits){
@@ -551,6 +628,10 @@ function renderStacks(){
 tq.addEventListener('input', truckSearch);
 document.getElementById('tclear').addEventListener('click', ()=>{ tq.value=''; truckSearch(); tq.focus(); });
 tcount.textContent = truckCountText();
+renderDay();
+renderLeft();
+renderQueue();
+renderReport();
 syncFromServer();
 setInterval(syncFromServer, 5000);
 setInterval(()=>{ if(document.getElementById('viewQueue').style.display !== 'none') renderQueue(); if(document.getElementById('viewReport').style.display !== 'none') renderReport(); }, 20000);
