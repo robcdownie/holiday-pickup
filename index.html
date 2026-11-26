@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build buttons-1 -->
+<!-- build qloc-1 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -386,6 +386,13 @@ function renderLeft(){
   }
 }
 function waitText(ts){ const mins = Math.max(0, Math.floor((Date.now() - ts) / 60000)); if(mins < 1) return 'JUST ARRIVED'; if(mins === 1) return 'WAITING 1 MIN'; return 'WAITING ' + mins + ' MIN'; }
+function locFor(r){
+  if(r.box === 'SF') return 'PRODUCE COOLER (STORE FULFILLED)';
+  const es = TRUCK.filter(b => b.n === r.box);
+  if(!es.length) return 'NOT IN FINAL TRAILER COUNT';
+  const parts = [...new Set(es.map(b => b.s + ' · ROW ' + b.r + ' · LEVEL ' + b.l))];
+  return parts.join('  +  ');
+}
 function renderQueue(){
   const rows = DATA.filter(r => arrived[r.order] && !picked.has(r.order)).sort((a,b) => arrived[a.order] - arrived[b.order]);
   document.getElementById('queueSummary').innerHTML = '<b>' + rows.length + '</b> ' + (rows.length === 1 ? 'customer' : 'customers') + ' waiting now';
@@ -398,7 +405,7 @@ function renderQueue(){
     row.appendChild(pos);
     const info = document.createElement('div'); info.className = 'leftinfo';
     info.innerHTML = '<div class="leftname">' + esc(r.last) + ', ' + esc(r.first) + ' &middot; BOX ' + esc(r.box) + '</div>' +
-      '<div class="leftmeta">Order #: <b>' + esc(r.order) + '</b> &middot; Pickup: <b>' + esc(r.time) + '</b> &middot; Folder: <b>' + esc(folderFor(r)) + '</b>' + (r.paid ? '' : ' &middot; <span class="unpaid">UNPAID</span>') + '<br><span class="qwait">' + waitText(arrived[r.order]) + '</span></div>';
+      '<div class="leftmeta">Order #: <b>' + esc(r.order) + '</b> &middot; Pickup: <b>' + esc(r.time) + '</b> &middot; Folder: <b>' + esc(folderFor(r)) + '</b>' + (r.paid ? '' : ' &middot; <span class="unpaid">UNPAID</span>') + '<br><b style="color:#7dd3fc">' + esc(locFor(r)) + '</b><br><span class="qwait">' + waitText(arrived[r.order]) + '</span></div>';
     row.appendChild(info);
     const cb = document.createElement('button'); cb.type = 'button'; cb.className = 'qdone'; cb.textContent = 'COMPLETED';
     cb.addEventListener('click', ()=>{ togglePicked(r.order); });
