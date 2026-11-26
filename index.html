@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build qding-1 -->
+<!-- build xsync-1 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -345,12 +345,13 @@ async function syncFromServer(){
   if(syncRunning) return; syncRunning = true;
   try{
     const ctl = new AbortController(); const to = setTimeout(() => ctl.abort(), 8000);
-    let r, rr, ra, rw;
-    try{ [r, rr, ra, rw] = await Promise.all([fetch(FB + '/pickups.json', {signal: ctl.signal}), fetch(FB + '/meta_reset.json', {signal: ctl.signal}), fetch(FB + '/arrivals.json', {signal: ctl.signal}), fetch(FB + '/waits.json', {signal: ctl.signal})]); } finally { clearTimeout(to); }
+    let r, rr, ra, rw, rc;
+    try{ [r, rr, ra, rw, rc] = await Promise.all([fetch(FB + '/pickups.json', {signal: ctl.signal}), fetch(FB + '/meta_reset.json', {signal: ctl.signal}), fetch(FB + '/arrivals.json', {signal: ctl.signal}), fetch(FB + '/waits.json', {signal: ctl.signal}), fetch(FB + '/crossed.json', {signal: ctl.signal})]); } finally { clearTimeout(to); }
     if(!r.ok) throw new Error('fb read failed');
     const data = await r.json();
     const aData = ra.ok ? await ra.json() : null;
     const wData = rw.ok ? await rw.json() : null;
+    const cData = rc && rc.ok ? await rc.json() : undefined;
     const resetVal = rr.ok ? await rr.json() : null;
     if(typeof resetVal === 'number') lastResetAt = resetVal;
     else if(lastResetAt > 0){ syncRunning = false; return; }
@@ -387,6 +388,23 @@ async function syncFromServer(){
     for(const o of Object.keys(wPending)){ if(wPending[o].v) nw[o] = wPending[o].v; else delete nw[o]; }
     const wChanged = JSON.stringify(waits) !== JSON.stringify(nw);
     waits = nw; saveWaits();
+    let cChanged = false;
+    if(cData !== undefined){
+      let cMigrated = false; try{ cMigrated = localStorage.getItem('hm_cmigrated_v1') === '1'; }catch(e){}
+      if(!cMigrated){
+        for(const o of crossed){ if(!(cData && ('o' + o) in cData) && !(o in cPending)) cSetPending(o, Date.now()); }
+        try{ localStorage.setItem('hm_cmigrated_v1', '1'); }catch(e){}
+      }
+      const ncross = {};
+      if(cData){ for(const k of Object.keys(cData)){ if(k.startsWith('o') && typeof cData[k] === 'number') ncross[k.slice(1)] = cData[k]; } }
+      for(const o of Object.keys(ncross)){ if(ncross[o] < lastResetAt) delete ncross[o]; }
+      for(const o of Object.keys(cPending)){ if(cPending[o].t < lastResetAt){ delete cPending[o]; saveCPending(); } }
+      for(const o of Object.keys(cPending)){ if(cPending[o].v) ncross[o] = cPending[o].v; else delete ncross[o]; }
+      const nset = new Set(Object.keys(ncross));
+      cChanged = JSON.stringify([...crossed].sort()) !== JSON.stringify([...nset].sort());
+      crossed = nset; saveCrossed();
+    }
+    hasSynced = true;
     const changed = JSON.stringify([...picked].sort()) !== JSON.stringify([...np].sort()) || JSON.stringify([...tPicked].sort()) !== JSON.stringify([...nt].sort());
     picked = np; tPicked = nt; savePicked(); tSave(); setSync(true); updateQueueTab();
     let epochNow = epochAtStart;
@@ -395,7 +413,8 @@ async function syncFromServer(){
     for(const id of Object.keys(pending)){ if(pendingTime(id) < lastResetAt){ delete pending[id]; savePending(); continue; } await pushPending(id); }
     for(const o of Object.keys(aPending)){ await aPush(o); }
     for(const o of Object.keys(wPending)){ await wPush(o); }
-    if(changed || aChanged || wChanged){
+    for(const o of Object.keys(cPending)){ await cPush(o); }
+    if(changed || aChanged || wChanged || cChanged){
       if(curView === 'lookup') search();
       else if(curView === 'day') renderDay();
       else if(curView === 'left') renderLeft();
@@ -430,7 +449,7 @@ function renderDay(){
     wrap.appendChild(el);
   }
 }
-document.getElementById('resetDay').addEventListener('click', async ()=>{ if(confirm('Clear EVERY picked up mark for the WHOLE TEAM? This cannot be undone.')){ const clearedOrders = [...picked]; const clearedKeys = [...tPicked]; pending = {}; savePending(); aPending = {}; saveAPending(); arrived = {}; saveArrived(); waits = {}; saveWaits(); wPending = {}; saveWPending(); picked.clear(); tPicked.clear(); savePicked(); tSave(); search(); renderDay(); renderLeft(); renderQueue(); renderReport(); const now = Date.now(); lastResetAt = now; let epochOk = true; try{ const rm = await fetch(FB + '/meta_reset.json', {method:'PUT', body: JSON.stringify(now)}); if(!rm.ok) throw new Error('reset stamp failed'); }catch(e){ epochOk = false; setSync(false); } if(!epochOk){ syncFromServer(); return; } try{ await fetch(FB + '/arrivals.json', {method:'DELETE'}); await fetch(FB + '/waits.json', {method:'DELETE'}); const r = await fetch(FB + '/pickups.json', {method:'DELETE'}); if(!r.ok) throw new Error('reset failed'); setSync(true); syncFromServer(); }catch(e){ for(const o of clearedOrders) setPending('o' + o, false); for(const t of clearedKeys) setPending('t' + t, false); setSync(false); syncFromServer(); } } });
+document.getElementById('resetDay').addEventListener('click', async ()=>{ if(confirm('Clear EVERY picked up mark for the WHOLE TEAM? This cannot be undone.')){ const clearedOrders = [...picked]; const clearedKeys = [...tPicked]; pending = {}; savePending(); aPending = {}; saveAPending(); arrived = {}; saveArrived(); waits = {}; saveWaits(); wPending = {}; saveWPending(); crossed.clear(); saveCrossed(); cPending = {}; saveCPending(); picked.clear(); tPicked.clear(); savePicked(); tSave(); search(); renderDay(); renderLeft(); renderQueue(); renderReport(); const now = Date.now(); lastResetAt = now; let epochOk = true; try{ const rm = await fetch(FB + '/meta_reset.json', {method:'PUT', body: JSON.stringify(now)}); if(!rm.ok) throw new Error('reset stamp failed'); }catch(e){ epochOk = false; setSync(false); } if(!epochOk){ syncFromServer(); return; } try{ await fetch(FB + '/arrivals.json', {method:'DELETE'}); await fetch(FB + '/waits.json', {method:'DELETE'}); await fetch(FB + '/crossed.json', {method:'DELETE'}); const r = await fetch(FB + '/pickups.json', {method:'DELETE'}); if(!r.ok) throw new Error('reset failed'); setSync(true); syncFromServer(); }catch(e){ for(const o of clearedOrders) setPending('o' + o, false); for(const t of clearedKeys) setPending('t' + t, false); setSync(false); syncFromServer(); } } });
 function renderLeft(){
   const rows = DATA.filter(r => !picked.has(r.order)).sort((a,b) => (timeKey(a.time) - timeKey(b.time)) || (a.last + a.first).localeCompare(b.last + b.first));
   document.getElementById('leftSummary').innerHTML = '<b>' + rows.length + '</b> orders not picked up yet';
@@ -466,6 +485,25 @@ function locHtml(r){
 }
 let crossed = new Set(); try{ const cx = JSON.parse(localStorage.getItem('hm_crossed_v1') || '[]'); if(Array.isArray(cx)) crossed = new Set(cx); }catch(e){}
 function saveCrossed(){ try{ localStorage.setItem('hm_crossed_v1', JSON.stringify([...crossed])); }catch(e){} }
+let cPending = {};
+try{ const rawC = JSON.parse(localStorage.getItem('hm_cpending_v1') || '{}'); if(rawC && typeof rawC === 'object' && !Array.isArray(rawC)){ for(const k of Object.keys(rawC)){ const rec = rawC[k]; if(rec && typeof rec === 'object' && 'v' in rec && typeof rec.t === 'number') cPending[k] = rec; } } }catch(e){}
+function saveCPending(){ try{ localStorage.setItem('hm_cpending_v1', JSON.stringify(cPending)); }catch(e){} }
+function cSetPending(order, v){ cPending[order] = { v, t: Date.now() }; saveCPending(); }
+const cChains = {};
+function cPush(order){
+  const prev = cChains[order] || Promise.resolve();
+  const run = prev.then(async () => {
+    const rec = cPending[order]; if(!rec) return;
+    try{
+      const r = rec.v ? await fetch(FB + '/crossed/o' + order + '.json', {method:'PUT', body: JSON.stringify(rec.v)}) : await fetch(FB + '/crossed/o' + order + '.json', {method:'DELETE'});
+      if(!r.ok) throw new Error('fb crossed write failed');
+      if(cPending[order] === rec){ delete cPending[order]; saveCPending(); }
+    }catch(e){ /* stays pending, retried on next sync */ }
+  });
+  cChains[order] = run;
+  return run;
+}
+let hasSynced = false;
 function fmtClock(ts){ const d = new Date(ts); let h = d.getHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 === 0 ? 12 : h % 12; return h + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + ap; }
 let justDone = {};
 function renderQueue(){
@@ -503,18 +541,18 @@ function renderQueue(){
     el.appendChild(ub);
     wrap.appendChild(el);
   });
-  for(const o of [...crossed]){ if(!picked.has(o) || !waits[o]) crossed.delete(o); }
+  for(const o of [...crossed]){ if(!picked.has(o) || !waits[o]){ crossed.delete(o); if(hasSynced){ cSetPending(o, null); cPush(o); } } }
   saveCrossed();
   const hist = Object.keys(waits).filter(o => picked.has(o)).map(o => ({r: DATA.find(x => x.order === o), w: waits[o]})).filter(x => x.r).sort((a,b) => b.w.c - a.w.c);
   if(hist.length){
     const hd = document.createElement('div'); hd.className = 'histhead';
-    hd.textContent = 'HANDED OUT (' + hist.length + '): CROSS THESE OFF THE PAPER WHEN THE LINE SLOWS DOWN. TAP A NAME AFTER YOU CROSS IT OFF.';
+    hd.textContent = 'HANDED OUT (' + hist.length + '): CROSS THESE OFF THE PAPER WHEN THE LINE SLOWS DOWN. TAP A NAME AFTER YOU CROSS IT OFF. CROSSED OFF MARKS SHOW ON EVERY PHONE.';
     wrap.appendChild(hd);
     for(const x of hist){
       const el = document.createElement('div'); el.className = 'histrow' + (crossed.has(x.r.order) ? ' crossed' : '');
       el.innerHTML = '<div class="leftname">' + esc(x.r.last) + ', ' + esc(x.r.first) + ' &middot; BOX ' + esc(x.r.box) + '</div>' +
         '<div class="leftmeta">Order #: <b>' + esc(x.r.order) + '</b> &middot; Pickup: <b>' + esc(x.r.time) + '</b><br>OUT AT <b>' + fmtClock(x.w.c) + '</b> &middot; WAITED ' + fmtDur(x.w.c - x.w.a) + '</div>';
-      el.addEventListener('click', ()=>{ if(crossed.has(x.r.order)) crossed.delete(x.r.order); else crossed.add(x.r.order); saveCrossed(); renderQueue(); });
+      el.addEventListener('click', ()=>{ if(crossed.has(x.r.order)){ crossed.delete(x.r.order); cSetPending(x.r.order, null); } else { crossed.add(x.r.order); cSetPending(x.r.order, Date.now()); } saveCrossed(); cPush(x.r.order); renderQueue(); });
       wrap.appendChild(el);
     }
   }
