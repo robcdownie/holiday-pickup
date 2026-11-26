@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build qflash-1 -->
+<!-- build qding-1 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,6 +62,7 @@
   .donestrip { display:flex; align-items:center; gap:10px; background:#14532d; border:2px solid #22c55e; border-radius:12px; padding:10px 12px; margin-bottom:10px; }
   .donestrip .dtxt { flex:1; font-size:16px; font-weight:800; color:#bbf7d0; }
   .donestrip .dundo { flex:0 0 auto; min-height:48px; font-size:15px; font-weight:900; padding:10px 16px; border-radius:10px; border:2px solid #fbbf24; background:#292524; color:#fbbf24; cursor:pointer; }
+  .soundbtn { display:block; margin:4px 0 10px; min-height:44px; font-size:14px; font-weight:900; padding:8px 14px; border-radius:10px; border:2px solid #44403c; background:#292524; color:#fbbf24; cursor:pointer; }
   .histhead { margin:18px 0 10px; font-size:15px; font-weight:900; color:#fbbf24; line-height:1.45; }
   .histrow { background:#1c1917; border:2px solid #44403c; border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer; }
   .histrow.crossed { opacity:.45; }
@@ -144,6 +145,7 @@
 </div>
 <div id="viewQueue" style="display:none">
   <p id="queueSummary" style="font-size:19px;margin:6px 0 4px"></p>
+  <button id="soundToggle" type="button" class="soundbtn">SOUND: ON</button>
   <p style="color:#a8a29e;font-size:14px;margin-bottom:14px">Customers who are HERE, in the order they arrived. Work the list top to bottom. Cross them off on the paper when you get the chance, then tap COMPLETED here when the box goes out and they come off the list on every phone.</p>
   <div id="queueList"></div>
 </div>
@@ -517,14 +519,46 @@ function renderQueue(){
     }
   }
 }
+let soundOn = true; try{ soundOn = localStorage.getItem('hm_sound_v1') !== '0'; }catch(e){}
+let audioCtx = null;
+function ensureAudio(){ try{ if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); if(audioCtx.state === 'suspended') audioCtx.resume(); }catch(e){} }
+document.addEventListener('pointerdown', ensureAudio);
+function ding(){
+  if(!soundOn) return;
+  ensureAudio();
+  if(!audioCtx || audioCtx.state !== 'running') return;
+  try{
+    const t0 = audioCtx.currentTime;
+    for(const [f, dt] of [[880, 0], [1318, 0.16]]){
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0.0001, t0 + dt);
+      g.gain.exponentialRampToValueAtTime(0.18, t0 + dt + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, t0 + dt + 0.3);
+      o.connect(g); g.connect(audioCtx.destination);
+      o.start(t0 + dt); o.stop(t0 + dt + 0.32);
+    }
+  }catch(e){}
+}
+let knownQueue = null;
+function queueDingCheck(ids){
+  const s = new Set(ids);
+  if(knownQueue === null){ knownQueue = s; return; }
+  let fresh = 0;
+  for(const id of s){ if(!knownQueue.has(id)) fresh++; }
+  knownQueue = s;
+  if(fresh > 0){ ding(); if(navigator.vibrate) navigator.vibrate(200); }
+}
 function updateQueueTab(){
   const tab = document.getElementById('tabQueue'); if(!tab) return;
   const now = Date.now();
   let n = 0, longest = 0;
-  for(const r of DATA){ const a = arrived[r.order]; if(a && !picked.has(r.order)){ n++; if(now - a > longest) longest = now - a; } }
+  const ids = [];
+  for(const r of DATA){ const a = arrived[r.order]; if(a && !picked.has(r.order)){ n++; ids.push(r.order); if(now - a > longest) longest = now - a; } }
   tab.textContent = n ? 'QUEUE (' + n + ')' : 'QUEUE';
   tab.classList.toggle('qalert', n > 0 && longest < 10 * 60000);
   tab.classList.toggle('qurgent', n > 0 && longest >= 10 * 60000);
+  queueDingCheck(ids);
 }
 function fmtDur(ms){ const m = Math.round(ms / 60000); if(m < 1) return 'UNDER 1 MIN'; return m + ' MIN'; }
 function slotMinutes(t){ const p = t.split(' '); const parts = p[0].split(':'); let h = Number(parts[0]); const m = Number(parts[1]); if(p[1] === 'PM' && h !== 12) h += 12; if(p[1] === 'AM' && h === 12) h = 0; return h * 60 + m; }
@@ -672,6 +706,10 @@ syncFromServer();
 setInterval(syncFromServer, 5000);
 setInterval(()=>{ updateQueueTab(); if(document.getElementById('viewQueue').style.display !== 'none') renderQueue(); if(document.getElementById('viewReport').style.display !== 'none') renderReport(); }, 20000);
 document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) syncFromServer(); });
+const soundBtn = document.getElementById('soundToggle');
+function paintSoundBtn(){ if(soundBtn) soundBtn.textContent = soundOn ? 'SOUND: ON (DINGS WHEN A NEW CUSTOMER JOINS THE QUEUE)' : 'SOUND: OFF'; }
+if(soundBtn) soundBtn.addEventListener('click', ()=>{ soundOn = !soundOn; try{ localStorage.setItem('hm_sound_v1', soundOn ? '1' : '0'); }catch(e){} paintSoundBtn(); if(soundOn) ding(); });
+paintSoundBtn();
 q.addEventListener('input', search);
 document.getElementById('clear').addEventListener('click', ()=>{ q.value=''; search(); q.focus(); });
 q.focus();
