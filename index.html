@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build report-1 -->
+<!-- build buttons-1 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -62,6 +62,7 @@
   .itemrow .qty { color:#fbbf24; font-weight:900; }
   .itemrow.done { color:#64748b; text-decoration:line-through; }
   .markbtn { width:100%; margin-top:12px; background:#166534; border-color:#166534; color:#fff; }
+  .markbtn.backup { min-height:46px; font-size:15px; padding:9px; margin-top:8px; background:#14532d; border-color:#14532d; opacity:.85; }
   .markbtn.undo { background:#292524; border-color:#44403c; }
   .pickedtag { display:inline-block; background:#166534; color:#dcfce7; font-weight:900; padding:4px 10px; border-radius:8px; font-size:17px; margin-left:8px; }
   .bigpct { font-size:64px; font-weight:900; color:#fbbf24; line-height:1; }
@@ -72,8 +73,8 @@
   .slotleft { font-size:20px; font-weight:800; color:#fbbf24; }
   .slot.done .slotleft { color:#4ade80; }
   .slotmeta { color:#a8a29e; font-size:15px; margin-top:2px; }
-  .arrivebtn { width:100%; margin-top:8px; min-height:52px; font-size:18px; font-weight:900; border-radius:10px; border:2px solid #38bdf8; background:#0c4a6e; color:#e0f2fe; cursor:pointer; }
-  .arrivebtn.on { background:#0369a1; color:#ffffff; border-color:#e0f2fe; }
+  .arrivebtn { width:100%; margin-top:12px; min-height:78px; font-size:24px; font-weight:900; border-radius:12px; border:3px solid #7dd3fc; background:#0284c7; color:#ffffff; cursor:pointer; }
+  .arrivebtn.on { background:#075985; color:#e0f2fe; border-color:#e0f2fe; }
   .slot.fresh { border-color:#38bdf8; box-shadow:0 0 0 3px rgba(56,189,248,.45); }
   .qpos { font-size:30px; font-weight:900; color:#38bdf8; flex:0 0 auto; min-width:52px; text-align:center; }
   .qwait { color:#fbbf24; font-weight:900; }
@@ -195,11 +196,6 @@ function search(){
       '<div class="meta">' + (r.paid ? '<span class="paid">PAID</span>' : '<span class="unpaid">UNPAID</span>') + (picked.has(r.order) ? '<span class="pickedtag">PICKED UP</span>' : '') + '</div>';
     if(picked.has(r.order)) d.classList.add('picked');
     if(!r.paid){ d.classList.add('unpaidcard'); const ub = document.createElement('div'); ub.className='unpaidbanner'; ub.textContent='UNPAID'; d.insertBefore(ub, d.firstChild); }
-    const mb = document.createElement('button'); mb.type='button';
-    mb.className = 'markbtn' + (picked.has(r.order) ? ' undo' : '');
-    mb.textContent = picked.has(r.order) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
-    mb.addEventListener('click', ()=>{ togglePicked(r.order); });
-    d.appendChild(mb);
     if(!picked.has(r.order)){
       const ab = document.createElement('button'); ab.type = 'button';
       const isArr = !!arrived[r.order];
@@ -208,6 +204,11 @@ function search(){
       ab.addEventListener('click', ()=>{ setArrived(r.order, !arrived[r.order]); });
       d.appendChild(ab);
     }
+    const mb = document.createElement('button'); mb.type='button';
+    mb.className = 'markbtn' + (picked.has(r.order) ? ' undo' : ' backup');
+    mb.textContent = picked.has(r.order) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
+    mb.addEventListener('click', ()=>{ togglePicked(r.order); });
+    d.appendChild(mb);
     const sa = document.createElement('a'); sa.className='smsbtn';
     sa.href = smsHref(r.box);
     sa.textContent = 'TEXT BOX ' + r.box + ' TO ROBBIE';
