@@ -268,6 +268,7 @@ const tq = document.getElementById('tq');
 const tresults = document.getElementById('tresults');
 const tcount = document.getElementById('tcount');
 function custFor(n){ return DATA.find(r => r.box === n); }
+function boxDone(b){ const c = custFor(b.n); if(c) return picked.has(c.order) || tPicked.has(b.n + '-' + b.b); return tPicked.has(b.n + '-' + b.b); }
 function truckSearch(){
   const v = tq.value.trim();
   tresults.innerHTML = '';
@@ -279,15 +280,15 @@ function truckSearch(){
   for(const b of hits){
     const c = custFor(b.n);
     const key = b.n + '-' + b.b;
-    const d = document.createElement('div'); d.className = 'card' + (tPicked.has(key) ? ' picked' : '') + (c && !c.paid ? ' unpaidcard' : '');
+    const d = document.createElement('div'); d.className = 'card' + (boxDone(b) ? ' picked' : '') + (c && !c.paid ? ' unpaidcard' : '');
     d.innerHTML = (c && !c.paid ? '<div class="unpaidbanner">UNPAID</div>' : '') + '<div class="boxlabel">BOX ' + b.n + (b.t > 1 ? ' &middot; BOX ' + b.b + ' OF ' + b.t : '') + '</div>' +
       '<div class="loc">' + b.s + ' &middot; ROW ' + b.r + ' &middot; LEVEL ' + b.l + '</div>' +
       (c ? '<div class="name">' + esc(c.last) + ', ' + esc(c.first) + '</div><div class="meta">Pickup: <b>' + esc(c.time) + '</b> &middot; Order #: <b>' + esc(c.order) + '</b></div>' : '') +
-      (tPicked.has(key) ? '<div class="meta"><span class="pickedtag">PICKED UP</span></div>' : '');
+      (boxDone(b) ? '<div class="meta"><span class="pickedtag">PICKED UP</span></div>' : '');
     const mb = document.createElement('button'); mb.type = 'button';
-    mb.className = 'markbtn' + (tPicked.has(key) ? ' undo' : '');
-    mb.textContent = tPicked.has(key) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
-    mb.addEventListener('click', ()=>{ const on = !tPicked.has(key); if(on) tPicked.add(key); else tPicked.delete(key); tSave(); truckSearch(); pending['t' + key] = on; savePending(); pushPending('t' + key); renderStacks(); });
+    mb.className = 'markbtn' + (boxDone(b) ? ' undo' : '');
+    mb.textContent = boxDone(b) ? 'UNDO PICKED UP' : 'MARK PICKED UP';
+    mb.addEventListener('click', ()=>{ const on = !boxDone(b); if(c){ if(on) picked.add(c.order); else picked.delete(c.order); savePicked(); pending['o' + c.order] = on; savePending(); pushPending('o' + c.order); if(!on && tPicked.has(key)){ tPicked.delete(key); tSave(); pending['t' + key] = false; savePending(); pushPending('t' + key); } search(); renderDay(); } else { if(on) tPicked.add(key); else tPicked.delete(key); tSave(); pending['t' + key] = on; savePending(); pushPending('t' + key); } truckSearch(); renderStacks(); });
     d.appendChild(mb);
     const sa2 = document.createElement('a'); sa2.className='smsbtn';
     sa2.href = 'sms:+14012584940&body=' + encodeURIComponent('Box ' + b.n);
@@ -300,7 +301,7 @@ function renderStacks(){
   const wrap = document.getElementById('stacks');
   wrap.innerHTML = '';
   let totalLeft = 0, totalDone = 0;
-  for(const b of TRUCK){ if(tPicked.has(b.n + '-' + b.b)) totalDone++; else totalLeft++; }
+  for(const b of TRUCK){ if(boxDone(b)) totalDone++; else totalLeft++; }
   const sum = document.createElement('div'); sum.className = 'stacksum';
   sum.textContent = 'IN TRAILER LIST: ' + totalLeft + ' LEFT · ' + totalDone + ' DONE';
   wrap.appendChild(sum);
@@ -310,8 +311,8 @@ function renderStacks(){
   for(const k of keys){
     const parts = k.split('|');
     const entries = groups[k].slice().sort((x,y)=> y.l - x.l);
-    const done = entries.filter(b => tPicked.has(b.n + '-' + b.b)).length;
-    const nums = entries.map(b => '<span class="snum' + (tPicked.has(b.n + '-' + b.b) ? ' done' : '') + '">' + b.n + '</span>').join(' ');
+    const done = entries.filter(b => boxDone(b)).length;
+    const nums = entries.map(b => '<span class="snum' + (boxDone(b) ? ' done' : '') + '">' + b.n + '</span>').join(' ');
     const el = document.createElement('div'); el.className = 'stackline';
     el.innerHTML = '<b>' + parts[0] + ' ROW ' + parts[1] + '</b> (' + entries.length + ': ' + (entries.length - done) + ' left, ' + done + ' done): ' + nums;
     wrap.appendChild(el);
