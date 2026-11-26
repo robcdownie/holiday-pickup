@@ -7,7 +7,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#000000">
-<!-- build fixes-1126 -->
+<!-- build queuehist-1 -->
 <title>Holiday Meal Lookup: Mission Hills</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -58,6 +58,10 @@
   .donestrip { display:flex; align-items:center; gap:10px; background:#14532d; border:2px solid #22c55e; border-radius:12px; padding:10px 12px; margin-bottom:10px; }
   .donestrip .dtxt { flex:1; font-size:16px; font-weight:800; color:#bbf7d0; }
   .donestrip .dundo { flex:0 0 auto; min-height:48px; font-size:15px; font-weight:900; padding:10px 16px; border-radius:10px; border:2px solid #fbbf24; background:#292524; color:#fbbf24; cursor:pointer; }
+  .histhead { margin:18px 0 10px; font-size:15px; font-weight:900; color:#fbbf24; line-height:1.45; }
+  .histrow { background:#1c1917; border:2px solid #44403c; border-radius:12px; padding:12px; margin-bottom:8px; cursor:pointer; }
+  .histrow.crossed { opacity:.45; }
+  .histrow.crossed .leftname { text-decoration:line-through; }
   @keyframes unpaidpulse { 0%,100% { box-shadow:0 0 0 0 rgba(239,68,68,.9); } 50% { box-shadow:0 0 0 12px rgba(239,68,68,0); } }
   .card.unpaidcard .box { color:#ffffff; }
   .card.unpaidcard .boxlabel { color:#fecaca; }
@@ -454,6 +458,9 @@ function locHtml(r){
   if(!es.length) return '<span style="color:#a8a29e">Trailer location not counted yet</span>';
   return '<b style="color:#7dd3fc">' + esc(locFor(r)) + '</b>';
 }
+let crossed = new Set(); try{ const cx = JSON.parse(localStorage.getItem('hm_crossed_v1') || '[]'); if(Array.isArray(cx)) crossed = new Set(cx); }catch(e){}
+function saveCrossed(){ try{ localStorage.setItem('hm_crossed_v1', JSON.stringify([...crossed])); }catch(e){} }
+function fmtClock(ts){ const d = new Date(ts); let h = d.getHours(); const ap = h >= 12 ? 'PM' : 'AM'; h = h % 12 === 0 ? 12 : h % 12; return h + ':' + String(d.getMinutes()).padStart(2, '0') + ' ' + ap; }
 let justDone = {};
 function renderQueue(){
   const rows = DATA.filter(r => arrived[r.order] && !picked.has(r.order)).sort((a,b) => arrived[a.order] - arrived[b.order]);
@@ -468,7 +475,7 @@ function renderQueue(){
     un.addEventListener('click', ()=>{ delete justDone[o]; togglePicked(o); });
     strip.appendChild(tx); strip.appendChild(un); wrap.appendChild(strip);
   }
-  if(!rows.length){ const el = document.createElement('div'); el.className = 'slot done'; el.innerHTML = '<div class="slothead"><span class="slottime">NOBODY WAITING</span></div><div class="slotmeta">When a customer checks in, tap ARRIVED on their card in LOOKUP and they will appear here.</div>'; wrap.appendChild(el); return; }
+  if(!rows.length){ const el = document.createElement('div'); el.className = 'slot done'; el.innerHTML = '<div class="slothead"><span class="slottime">NOBODY WAITING</span></div><div class="slotmeta">When a customer checks in, tap ARRIVED on their card in LOOKUP and they will appear here.</div>'; wrap.appendChild(el); }
   rows.forEach((r, i) => {
     const fresh = Date.now() - arrived[r.order] < 90000;
     const el = document.createElement('div'); el.className = 'slot' + (!r.paid ? ' unpaidcard' : '') + (fresh ? ' fresh' : '');
@@ -489,6 +496,21 @@ function renderQueue(){
     el.appendChild(ub);
     wrap.appendChild(el);
   });
+  for(const o of [...crossed]){ if(!picked.has(o) || !waits[o]) crossed.delete(o); }
+  saveCrossed();
+  const hist = Object.keys(waits).filter(o => picked.has(o)).map(o => ({r: DATA.find(x => x.order === o), w: waits[o]})).filter(x => x.r).sort((a,b) => b.w.c - a.w.c);
+  if(hist.length){
+    const hd = document.createElement('div'); hd.className = 'histhead';
+    hd.textContent = 'HANDED OUT (' + hist.length + '): CROSS THESE OFF THE PAPER WHEN THE LINE SLOWS DOWN. TAP A NAME AFTER YOU CROSS IT OFF.';
+    wrap.appendChild(hd);
+    for(const x of hist){
+      const el = document.createElement('div'); el.className = 'histrow' + (crossed.has(x.r.order) ? ' crossed' : '');
+      el.innerHTML = '<div class="leftname">' + esc(x.r.last) + ', ' + esc(x.r.first) + ' &middot; BOX ' + esc(x.r.box) + '</div>' +
+        '<div class="leftmeta">Order #: <b>' + esc(x.r.order) + '</b> &middot; Pickup: <b>' + esc(x.r.time) + '</b><br>OUT AT <b>' + fmtClock(x.w.c) + '</b> &middot; WAITED ' + fmtDur(x.w.c - x.w.a) + '</div>';
+      el.addEventListener('click', ()=>{ if(crossed.has(x.r.order)) crossed.delete(x.r.order); else crossed.add(x.r.order); saveCrossed(); renderQueue(); });
+      wrap.appendChild(el);
+    }
+  }
 }
 function fmtDur(ms){ const m = Math.round(ms / 60000); if(m < 1) return 'UNDER 1 MIN'; return m + ' MIN'; }
 function slotMinutes(t){ const p = t.split(' '); const parts = p[0].split(':'); let h = Number(parts[0]); const m = Number(parts[1]); if(p[1] === 'PM' && h !== 12) h += 12; if(p[1] === 'AM' && h === 12) h = 0; return h * 60 + m; }
